@@ -24,6 +24,9 @@ port = 54323
 [functions.gekko-proxy]
 verify_jwt = false
 
+[functions.gekko-light-control]
+verify_jwt = false
+
 [functions.energy-ai-analysis]
 verify_jwt = false
 
@@ -37,4 +40,7 @@ verify_jwt = false
 verify_jwt = false
 
 [functions.gekko-multi-import]
+verify_jwt = false
+
+[functions.energy-ai-advanced]
 verify_jwt = false

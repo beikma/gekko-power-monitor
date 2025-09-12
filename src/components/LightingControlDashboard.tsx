@@ -4,12 +4,18 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useState } from "react";
 
 interface LightingControlDashboardProps {
   data: any;
 }
 
 export default function LightingControlDashboard({ data }: LightingControlDashboardProps) {
+  const { toast } = useToast();
+  const [isToggling, setIsToggling] = useState(false);
+  
   // Extract lighting data
   const lights = data?.lights || {};
   const lightItems = Object.entries(lights)
@@ -54,11 +60,76 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
   // Master toggle state - true if more than half the lights are on
   const allLightsOn = activeLights > totalLights / 2;
 
-  const handleMasterToggle = (checked: boolean) => {
-    // This would integrate with your lighting control system
-    // For demo purposes, we'll just show the toggle state
-    console.log(`Master toggle: ${checked ? 'All lights ON' : 'All lights OFF'}`);
-    // In a real implementation, you would send commands to turn all lights on/off
+  const handleMasterToggle = async (checked: boolean) => {
+    if (isToggling) return;
+    
+    setIsToggling(true);
+    
+    try {
+      toast({
+        title: "Controlling Lights",
+        description: `${checked ? 'Turning all lights on' : 'Turning all lights off'}...`,
+      });
+
+      const { data: result, error } = await supabase.functions.invoke('gekko-light-control', {
+        body: {
+          action: 'toggle_all'
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: `All lights ${result.result.action === 'all_on' ? 'turned on' : 'turned off'}. ${result.result.lightsAffected} lights affected via ${result.result.groupsControlled} groups.`,
+      });
+
+      console.log('Light control result:', result);
+      
+    } catch (error) {
+      console.error('Error controlling lights:', error);
+      toast({
+        title: "Error",
+        description: "Failed to control lights. Please check the connection to your GEKKO system.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsToggling(false);
+    }
+  };
+
+  const handleLightToggle = async (lightId: string, currentState: boolean) => {
+    try {
+      toast({
+        title: "Controlling Light",
+        description: `${currentState ? 'Turning off' : 'Turning on'} ${lightId}...`,
+      });
+
+      const { data: result, error } = await supabase.functions.invoke('gekko-light-control', {
+        body: {
+          action: 'toggle_light',
+          lightId: lightId,
+          value: currentState ? '1' : '0' // Send current state, function will toggle it
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "Success!",
+        description: `Light ${lightId} ${result.result.newState === '1' ? 'turned on' : 'turned off'}`,
+      });
+
+      console.log('Single light control result:', result);
+      
+    } catch (error) {
+      console.error('Error controlling light:', error);
+      toast({
+        title: "Error",
+        description: `Failed to control light ${lightId}. Please check the connection.`,
+        variant: "destructive",
+      });
+    }
   };
 
   const getColorStyle = (color: {r: number, g: number, b: number} | null) => {
@@ -95,6 +166,7 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
               id="master-toggle"
               checked={allLightsOn}
               onCheckedChange={handleMasterToggle}
+              disabled={isToggling}
             />
           </div>
           
@@ -213,10 +285,17 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
                   </div>
                 )}
 
-                <div className="flex gap-1 mt-2">
-                  {light.hasColor && <Badge variant="outline" className="text-xs">Color</Badge>}
-                  {light.isDimmable && <Badge variant="outline" className="text-xs">Dim</Badge>}
-                </div>
+                 <div className="flex gap-1 mt-2 justify-between">
+                   <div className="flex gap-1">
+                     {light.hasColor && <Badge variant="outline" className="text-xs">Color</Badge>}
+                     {light.isDimmable && <Badge variant="outline" className="text-xs">Dim</Badge>}
+                   </div>
+                   <Switch
+                     checked={light.isOn}
+                     onCheckedChange={() => handleLightToggle(light.id, light.isOn)}
+                     disabled={isToggling}
+                   />
+                 </div>
               </div>
             ))}
           </div>
