@@ -57,6 +57,14 @@ export function useGekkoApi(config: Partial<GekkoApiConfig> = {}): UseGekkoApiRe
       ]);
 
       if (!dataResponse.ok || !statusResponse.ok) {
+        const dataError = await dataResponse.text().catch(() => 'Unknown error');
+        const statusError = await statusResponse.text().catch(() => 'Unknown error');
+        
+        // Handle specific 410 errors (Gone - resource permanently unavailable)
+        if (dataResponse.status === 410 || statusResponse.status === 410) {
+          throw new Error(`myGEKKO API: Resource no longer available. Please check your credentials or contact support. (Status: ${dataResponse.status}/${statusResponse.status})`);
+        }
+        
         throw new Error(`API Error: ${dataResponse.status} / ${statusResponse.status}`);
       }
 
@@ -71,8 +79,15 @@ export function useGekkoApi(config: Partial<GekkoApiConfig> = {}): UseGekkoApiRe
       setLastUpdate(new Date());
       setConnectionStatus('connected');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Unknown error');
+      const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+      console.error('myGEKKO API Error:', errorMessage);
+      setError(errorMessage);
       setConnectionStatus('disconnected');
+      
+      // Only show toast for non-410 errors to avoid spam
+      if (!errorMessage.includes('Resource no longer available')) {
+        // Could add toast notification here if needed
+      }
     } finally {
       setIsLoading(false);
     }

@@ -44,6 +44,23 @@ serve(async (req) => {
     
     if (!response.ok) {
       console.error(`myGEKKO API error: ${response.status} - ${response.statusText}`);
+      
+      // Handle specific error codes
+      if (response.status === 410) {
+        console.error('myGEKKO API: Resource permanently unavailable (410 Gone). This may indicate invalid credentials or discontinued service.');
+        return new Response(
+          JSON.stringify({ 
+            error: `API Error: ${response.status}`, 
+            message: 'myGEKKO resource no longer available. Please check your credentials.',
+            code: 'RESOURCE_GONE'
+          }),
+          { 
+            status: response.status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
+      
       return new Response(
         JSON.stringify({ error: `API Error: ${response.status}` }),
         { 

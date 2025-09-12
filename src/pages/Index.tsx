@@ -282,6 +282,15 @@ const Index = () => {
               <span className="font-medium text-destructive">Connection Error</span>
             </div>
             <p className="text-sm text-destructive/80 mt-1">{error}</p>
+            {error.includes('Resource no longer available') && (
+              <div className="mt-3 p-3 bg-muted/20 rounded border border-muted">
+                <p className="text-sm text-muted-foreground">
+                  <strong>Don't worry!</strong> Your building profile and manual data are still working. 
+                  The myGEKKO API credentials may need to be updated. Contact your system administrator 
+                  or check the admin panel to update your connection settings.
+                </p>
+              </div>
+            )}
           </div>
         )}
 
