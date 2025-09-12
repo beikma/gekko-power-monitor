@@ -72,60 +72,27 @@ export function CO2ImpactTracker({ data }: CO2ImpactTrackerProps) {
   const progressPercent = Math.min((co2Data.yearlySavings / yearlyTarget) * 100, 100);
 
   return (
-    <Card className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950 dark:to-green-900 border-emerald-200 dark:border-emerald-800">
+    <Card className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950 dark:to-green-900 border-emerald-200 dark:border-emerald-800 h-full">
       <CardHeader className="pb-2">
-        <CardTitle className="text-emerald-800 dark:text-emerald-100 flex items-center gap-2 text-lg">
+        <CardTitle className="text-emerald-800 dark:text-emerald-100 flex items-center gap-2 text-sm">
           <Leaf className="h-4 w-4" />
-          CO₂ Impact Tracker
+          CO₂ Saved
         </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-3">
+      <CardContent className="space-y-2">
         {/* Main CO2 Display */}
         <div className="text-center">
           <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-100">
             {co2Data.totalSavings.toFixed(1)} kg
           </div>
           <div className="text-xs text-emerald-600 dark:text-emerald-300">
-            Total CO₂ Saved
-          </div>
-        </div>
-
-        {/* Compact Comparisons */}
-        <div className="grid grid-cols-3 gap-2 text-xs">
-          <div className="text-center">
-            <TreePine className="h-4 w-4 text-green-600 mx-auto mb-1" />
-            <div className="font-semibold text-emerald-800 dark:text-emerald-200">
-              {treesEquivalent}
-            </div>
-            <div className="text-emerald-600 dark:text-emerald-400">
-              Trees Planted
-            </div>
-          </div>
-          
-          <div className="text-center">
-            <Car className="h-4 w-4 text-blue-600 mx-auto mb-1" />
-            <div className="font-semibold text-emerald-800 dark:text-emerald-200">
-              {(carKmEquivalent / 1000).toFixed(0)}k km
-            </div>
-            <div className="text-emerald-600 dark:text-emerald-400">
-              Car Distance
-            </div>
-          </div>
-
-          <div className="text-center">
-            <Euro className="h-4 w-4 text-emerald-700 dark:text-emerald-300 mx-auto mb-1" />
-            <div className="font-semibold text-emerald-800 dark:text-emerald-200">
-              €{euroSavings}
-            </div>
-            <div className="text-emerald-600 dark:text-emerald-400">
-              Carbon Credits
-            </div>
+            Total CO₂
           </div>
         </div>
 
         {/* Today's saving */}
-        <div className="text-center text-xs text-emerald-600 dark:text-emerald-400 pt-1 border-t border-emerald-200 dark:border-emerald-700">
-          Today: <span className="font-semibold">{co2Data.dailySavings.toFixed(2)} kg CO₂</span> saved
+        <div className="text-center text-xs text-emerald-600 dark:text-emerald-400">
+          Today: <span className="font-semibold">{co2Data.dailySavings.toFixed(2)} kg</span>
         </div>
       </CardContent>
     </Card>
