@@ -31,9 +31,12 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
       const g = (colorValue >> 8) & 0xFF;
       const b = colorValue & 0xFF;
       
+      // Extract real name from GEKKO data structure
+      const realName = light.name || light.itemname || light.title || light.label || `Light ${key.replace('item', '')}`;
+      
       return {
         id: key,
-        name: `Light ${key.replace('item', '')}`,
+        name: realName,
         isOn,
         brightness,
         color: colorValue > 0 ? { r, g, b } : null,
@@ -46,11 +49,14 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
   // Extract lighting groups
   const groups = Object.entries(lights)
     .filter(([key]) => key.startsWith('group'))
-    .map(([key, group]: [string, any]) => ({
-      id: key,
-      name: `Zone ${key.replace('group', '')}`,
-      isOn: parseInt(group.sumstate?.value) === 1
-    }));
+    .map(([key, group]: [string, any]) => {
+      const realName = group.name || group.itemname || group.title || group.label || `Zone ${key.replace('group', '')}`;
+      return {
+        id: key,
+        name: realName,
+        isOn: parseInt(group.sumstate?.value) === 1
+      };
+    });
 
   const activeLights = lightItems.filter(light => light.isOn).length;
   const totalLights = lightItems.length;

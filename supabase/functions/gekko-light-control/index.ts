@@ -77,7 +77,10 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
     }
 
     const statusData = await statusResponse.json();
+    console.log('Full status data received:', JSON.stringify(statusData, null, 2));
+    
     const lights = statusData.lights || {};
+    console.log('Lights data:', JSON.stringify(lights, null, 2));
     
     console.log('Current light status retrieved');
 
@@ -87,6 +90,7 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
       .filter(([key]) => key.startsWith('item'))
       .map(([key, light]: [string, any]) => {
         const values = light.sumstate?.value?.split(';') || [];
+        console.log(`Light ${key}:`, { light, values });
         return {
           id: key,
           isOn: parseInt(values[0]) === 1
@@ -105,6 +109,8 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
       .filter(([key]) => key.startsWith('group'))
       .map(([key]) => key);
 
+    console.log('Groups found:', groups);
+
     for (const groupId of groups) {
       const groupCommand = {
         groupId,
@@ -113,22 +119,31 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
         url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${groupId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`
       };
       
+      console.log(`Sending command to group ${groupId}:`, groupCommand.url);
+      
       groupCommands.push(
         fetch(groupCommand.url, { method: 'POST' })
-          .then(response => ({
-            groupId,
-            success: response.ok,
-            status: response.status
-          }))
-          .catch(error => ({
-            groupId,
-            success: false,
-            error: error.message
-          }))
+          .then(response => {
+            console.log(`Group ${groupId} response:`, response.status);
+            return {
+              groupId,
+              success: response.ok,
+              status: response.status
+            };
+          })
+          .catch(error => {
+            console.error(`Group ${groupId} error:`, error);
+            return {
+              groupId,
+              success: false,
+              error: error.message
+            };
+          })
       );
     }
 
     const groupResults = await Promise.all(groupCommands);
+    console.log('All group command results:', groupResults);
     
     return {
       action: shouldTurnOn ? 'all_on' : 'all_off',
