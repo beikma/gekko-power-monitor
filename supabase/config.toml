@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.energy-ai-analysis]
 verify_jwt = false
+
+[functions.energy-ai-analysis-simple]
+verify_jwt = false

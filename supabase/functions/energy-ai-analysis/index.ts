@@ -100,7 +100,8 @@ serve(async (req) => {
 });
 
 function prepareDataSummary(readings: EnergyReading[]) {
-  const recentReadings = readings.slice(0, 50); // Last 50 readings
+  // Use only last 20 readings for faster processing
+  const recentReadings = readings.slice(0, 20);
   
   // Calculate averages and trends
   const avgPower = recentReadings.reduce((sum, r) => sum + (r.current_power || 0), 0) / recentReadings.length;
@@ -179,121 +180,10 @@ function prepareDataSummary(readings: EnergyReading[]) {
 }
 
 async function generateAIInsights(dataSummary: any): Promise<InsightResult[]> {
-  // Generate fallback insights first as a safety net
-  const fallbackInsights = generateFallbackInsights(dataSummary);
+  console.log('Generating pattern-based insights from energy data...');
   
-  // Only try OpenAI if we have a valid API key
-  if (!openAIApiKey || openAIApiKey.length < 10) {
-    console.log('No valid OpenAI API key, using fallback insights');
-    return fallbackInsights;
-  }
-
-  const prompt = `
-You are an expert energy management AI analyzing building energy consumption data. Based on the following energy data, generate actionable insights for a facility manager.
-
-Data Summary:
-${JSON.stringify(dataSummary.summary, null, 2)}
-
-Generate 3-5 specific, actionable insights focusing on:
-1. Energy efficiency improvements
-2. Cost savings opportunities  
-3. Predictive maintenance needs
-4. CO2 reduction strategies
-5. Load optimization recommendations
-
-For each insight, provide:
-- insight_type: one of "efficiency", "cost_optimization", "maintenance", "sustainability", "load_management"
-- title: Short, specific title (max 60 chars)
-- description: Detailed recommendation with specific actions (max 200 chars)
-- confidence_score: 0-100 based on data quality and pattern strength
-- severity: "low", "medium", "high" based on impact potential
-- category: "energy", "cost", "maintenance", "sustainability", or "optimization"
-- metadata: relevant numbers, thresholds, or technical details
-
-Respond only with valid JSON array format:
-[{"insight_type": "...", "title": "...", "description": "...", "confidence_score": 85, "severity": "medium", "category": "energy", "metadata": {...}}]
-`;
-
-  try {
-    console.log('Attempting OpenAI API call...');
-    const response = await fetch('https://api.openai.com/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${openAIApiKey}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model: 'gpt-5-mini-2025-08-07',
-        messages: [
-          { 
-            role: 'system', 
-            content: 'You are an expert energy management consultant specializing in building automation and efficiency optimization. Provide practical, data-driven recommendations.' 
-          },
-          { role: 'user', content: prompt }
-        ],
-        max_completion_tokens: 1000,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenAI API error:', response.status, errorText);
-      console.log('Falling back to pattern-based insights');
-      return fallbackInsights;
-    }
-
-    const data = await response.json();
-    
-    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
-      console.error('Invalid OpenAI response structure:', data);
-      console.log('Falling back to pattern-based insights');
-      return fallbackInsights;
-    }
-    
-    const content = data.choices[0].message.content;
-    
-    console.log('Raw OpenAI response:', content);
-    
-    if (!content || content.trim() === '') {
-      console.error('OpenAI returned empty content');
-      console.log('Falling back to pattern-based insights');
-      return fallbackInsights;
-    }
-    
-    // Clean and parse the response
-    const cleanContent = content.replace(/```json\n?|```\n?/g, '').trim();
-    
-    if (!cleanContent) {
-      console.log('No valid JSON content after cleaning, using fallback');
-      return fallbackInsights;
-    }
-    
-    const insights = JSON.parse(cleanContent);
-    
-    if (!Array.isArray(insights)) {
-      console.error('OpenAI response is not an array');
-      console.log('Falling back to pattern-based insights');
-      return fallbackInsights;
-    }
-
-    const processedInsights = insights.map(insight => ({
-      insight_type: insight.insight_type || 'general',
-      title: insight.title?.substring(0, 60) || 'Energy Insight',
-      description: insight.description?.substring(0, 200) || 'AI-generated recommendation',
-      confidence_score: Math.min(Math.max(insight.confidence_score || 70, 0), 100),
-      severity: ['low', 'medium', 'high'].includes(insight.severity) ? insight.severity : 'medium',
-      category: ['energy', 'cost', 'maintenance', 'sustainability', 'optimization'].includes(insight.category) ? insight.category : 'energy',
-      metadata: insight.metadata || {}
-    }));
-
-    console.log('Successfully processed OpenAI insights');
-    return processedInsights;
-
-  } catch (error) {
-    console.error('Error generating AI insights:', error);
-    console.log('Falling back to pattern-based insights');
-    return fallbackInsights;
-  }
+  // For now, skip OpenAI and use only pattern-based insights for reliability
+  return generateFallbackInsights(dataSummary);
 }
 
 function generateFallbackInsights(dataSummary: any): InsightResult[] {

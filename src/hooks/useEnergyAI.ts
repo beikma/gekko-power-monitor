@@ -79,8 +79,8 @@ export function useEnergyAI() {
         return;
       }
 
-      // Call AI analysis function
-      const { data, error } = await supabase.functions.invoke('energy-ai-analysis', {
+      // Call simplified AI analysis function
+      const { data, error } = await supabase.functions.invoke('energy-ai-analysis-simple', {
         body: { readings }
       });
 
