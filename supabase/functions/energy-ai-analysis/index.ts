@@ -179,6 +179,15 @@ function prepareDataSummary(readings: EnergyReading[]) {
 }
 
 async function generateAIInsights(dataSummary: any): Promise<InsightResult[]> {
+  // Generate fallback insights first as a safety net
+  const fallbackInsights = generateFallbackInsights(dataSummary);
+  
+  // Only try OpenAI if we have a valid API key
+  if (!openAIApiKey || openAIApiKey.length < 10) {
+    console.log('No valid OpenAI API key, using fallback insights');
+    return fallbackInsights;
+  }
+
   const prompt = `
 You are an expert energy management AI analyzing building energy consumption data. Based on the following energy data, generate actionable insights for a facility manager.
 
@@ -206,6 +215,7 @@ Respond only with valid JSON array format:
 `;
 
   try {
+    console.log('Attempting OpenAI API call...');
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -228,23 +238,45 @@ Respond only with valid JSON array format:
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenAI API error:', response.status, errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
+      console.log('Falling back to pattern-based insights');
+      return fallbackInsights;
     }
 
     const data = await response.json();
+    
+    if (!data.choices || !data.choices[0] || !data.choices[0].message) {
+      console.error('Invalid OpenAI response structure:', data);
+      console.log('Falling back to pattern-based insights');
+      return fallbackInsights;
+    }
+    
     const content = data.choices[0].message.content;
     
     console.log('Raw OpenAI response:', content);
     
+    if (!content || content.trim() === '') {
+      console.error('OpenAI returned empty content');
+      console.log('Falling back to pattern-based insights');
+      return fallbackInsights;
+    }
+    
     // Clean and parse the response
     const cleanContent = content.replace(/```json\n?|```\n?/g, '').trim();
+    
+    if (!cleanContent) {
+      console.log('No valid JSON content after cleaning, using fallback');
+      return fallbackInsights;
+    }
+    
     const insights = JSON.parse(cleanContent);
     
     if (!Array.isArray(insights)) {
-      throw new Error('OpenAI response is not an array');
+      console.error('OpenAI response is not an array');
+      console.log('Falling back to pattern-based insights');
+      return fallbackInsights;
     }
 
-    return insights.map(insight => ({
+    const processedInsights = insights.map(insight => ({
       insight_type: insight.insight_type || 'general',
       title: insight.title?.substring(0, 60) || 'Energy Insight',
       description: insight.description?.substring(0, 200) || 'AI-generated recommendation',
@@ -254,58 +286,64 @@ Respond only with valid JSON array format:
       metadata: insight.metadata || {}
     }));
 
+    console.log('Successfully processed OpenAI insights');
+    return processedInsights;
+
   } catch (error) {
     console.error('Error generating AI insights:', error);
-    
-    // Fallback insights based on data patterns
-    const fallbackInsights: InsightResult[] = [];
-    
-    if (dataSummary.summary.trends.selfConsumptionRatio < 60) {
-      fallbackInsights.push({
-        insight_type: 'efficiency',
-        title: 'Improve Solar Self-Consumption',
-        description: `Current self-consumption is ${dataSummary.summary.trends.selfConsumptionRatio}%. Shift loads to daylight hours to reduce grid dependency and costs.`,
-        confidence_score: 80,
-        severity: 'medium',
-        category: 'efficiency',
-        metadata: { current_ratio: dataSummary.summary.trends.selfConsumptionRatio, target_ratio: 75 }
-      });
-    }
-
-    if (dataSummary.summary.averages.batteryLevel < 30) {
-      fallbackInsights.push({
-        insight_type: 'maintenance',
-        title: 'Battery System Check Required',
-        description: `Average battery level is ${dataSummary.summary.averages.batteryLevel}%. Schedule maintenance to ensure optimal storage capacity.`,
-        confidence_score: 90,
-        severity: 'high',
-        category: 'maintenance',
-        metadata: { avg_battery_level: dataSummary.summary.averages.batteryLevel }
-      });
-    }
-
-    if (dataSummary.summary.peakUsage.hour >= 18 && dataSummary.summary.peakUsage.hour <= 20) {
-      fallbackInsights.push({
-        insight_type: 'cost_optimization',
-        title: 'Peak Load Shifting Opportunity',
-        description: `Peak usage at ${dataSummary.summary.peakUsage.hour}:00. Pre-cool building during solar hours to reduce evening grid consumption.`,
-        confidence_score: 75,
-        severity: 'medium',
-        category: 'cost',
-        metadata: { peak_hour: dataSummary.summary.peakUsage.hour, peak_power: dataSummary.summary.peakUsage.avgPower }
-      });
-    }
-
-    return fallbackInsights.length > 0 ? fallbackInsights : [{
-      insight_type: 'general',
-      title: 'Data Analysis Complete',
-      description: 'Energy patterns analyzed. System operating within normal parameters. Continue monitoring for optimization opportunities.',
-      confidence_score: 60,
-      severity: 'low',
-      category: 'energy',
-      metadata: { analysis_timestamp: new Date().toISOString() }
-    }];
+    console.log('Falling back to pattern-based insights');
+    return fallbackInsights;
   }
+}
+
+function generateFallbackInsights(dataSummary: any): InsightResult[] {
+  const fallbackInsights: InsightResult[] = [];
+  
+  if (dataSummary.summary.trends.selfConsumptionRatio < 60) {
+    fallbackInsights.push({
+      insight_type: 'efficiency',
+      title: 'Improve Solar Self-Consumption',
+      description: `Current self-consumption is ${dataSummary.summary.trends.selfConsumptionRatio}%. Shift loads to daylight hours to reduce grid dependency and costs.`,
+      confidence_score: 80,
+      severity: 'medium',
+      category: 'efficiency',
+      metadata: { current_ratio: dataSummary.summary.trends.selfConsumptionRatio, target_ratio: 75 }
+    });
+  }
+
+  if (dataSummary.summary.averages.batteryLevel < 30) {
+    fallbackInsights.push({
+      insight_type: 'maintenance',  
+      title: 'Battery System Check Required',
+      description: `Average battery level is ${dataSummary.summary.averages.batteryLevel}%. Schedule maintenance to ensure optimal storage capacity.`,
+      confidence_score: 90,
+      severity: 'high',
+      category: 'maintenance',
+      metadata: { avg_battery_level: dataSummary.summary.averages.batteryLevel }
+    });
+  }
+
+  if (dataSummary.summary.peakUsage.hour >= 18 && dataSummary.summary.peakUsage.hour <= 20) {
+    fallbackInsights.push({
+      insight_type: 'cost_optimization',
+      title: 'Peak Load Shifting Opportunity',
+      description: `Peak usage at ${dataSummary.summary.peakUsage.hour}:00. Pre-cool building during solar hours to reduce evening grid consumption.`,
+      confidence_score: 75,
+      severity: 'medium',
+      category: 'cost',
+      metadata: { peak_hour: dataSummary.summary.peakUsage.hour, peak_power: dataSummary.summary.peakUsage.avgPower }
+    });
+  }
+
+  return fallbackInsights.length > 0 ? fallbackInsights : [{
+    insight_type: 'general',
+    title: 'Data Analysis Complete',
+    description: 'Energy patterns analyzed. System operating within normal parameters. Continue monitoring for optimization opportunities.',
+    confidence_score: 60,
+    severity: 'low',
+    category: 'energy',
+    metadata: { analysis_timestamp: new Date().toISOString() }
+  }];
 }
 
 async function storeInsights(insights: InsightResult[]) {
