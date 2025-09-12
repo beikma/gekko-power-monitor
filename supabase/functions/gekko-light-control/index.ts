@@ -170,13 +170,106 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
     // Toggle the state - if currently on (1), turn off (0) and vice versa
     const newState = currentState === '1' ? '0' : '1';
     
+    // For Küche Spots (item0), let's try multiple command formats to find what works
+    if (lightId === 'item0') {
+      console.log(`Testing multiple command formats for Küche Spots (${lightId})`);
+      console.log(`Current state: ${currentState}, New state: ${newState}`);
+      
+      // Get the command index first
+      const schemaResponse = await fetch(
+        `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}`
+      );
+      
+      const schemaData = await schemaResponse.json();
+      const commandIndex = schemaData.lights?.[lightId]?.scmd?.index;
+      console.log(`Command index for ${lightId}: ${commandIndex}`);
+      
+      // Test different URL formats sequentially
+      const testFormats = [
+        {
+          name: "scmd endpoint with index",
+          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
+        },
+        {
+          name: "var/scmd with index", 
+          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
+        },
+        {
+          name: "direct index command",
+          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
+        },
+        {
+          name: "item scmd path",
+          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`
+        },
+        {
+          name: "lights path",
+          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/lights/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`
+        }
+      ];
+      
+      const testResults = [];
+      
+      for (const format of testFormats) {
+        console.log(`Testing ${format.name}: ${format.url}`);
+        
+        try {
+          const response = await fetch(format.url, {
+            method: 'GET',
+            headers: { 'Content-Type': 'application/json' }
+          });
+          
+          const responseText = await response.text();
+          console.log(`${format.name} response: ${response.status} - ${responseText}`);
+          
+          testResults.push({
+            format: format.name,
+            success: response.ok,
+            status: response.status,
+            responseText
+          });
+          
+          // If we get a successful response, use this format
+          if (response.ok && !responseText.includes('error')) {
+            console.log(`SUCCESS! Format "${format.name}" worked!`);
+            return {
+              lightId,
+              previousState: currentState,
+              newState,
+              success: true,
+              status: response.status,
+              responseText: responseText,
+              workingFormat: format.name
+            };
+          }
+        } catch (error) {
+          console.log(`${format.name} error: ${error}`);
+          testResults.push({
+            format: format.name,
+            success: false,
+            error: error.message
+          });
+        }
+      }
+      
+      return {
+        lightId,
+        previousState: currentState,
+        newState,
+        success: false,
+        testResults,
+        message: 'All command formats failed for Küche Spots'
+      };
+    }
+    
+    // For other lights, use the original format for now
     const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`;
     
     console.log(`Toggling light ${lightId} from ${currentState} to ${newState}`);
     console.log(`Command URL: ${commandUrl}`);
     
     const response = await fetch(commandUrl, { 
-      method: 'GET',  // Changed to GET
+      method: 'GET',
       headers: {
         'Content-Type': 'application/json'
       }

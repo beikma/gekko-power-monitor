@@ -43,14 +43,27 @@ serve(async (req) => {
       method: req.method,
     };
 
-    // Handle command requests using index parameter
-    if (endpoint === 'var/scmd' && index && value !== null) {
+    // Handle different command formats
+    if (endpoint === 'scmd' && index && value !== null) {
+      // Direct scmd endpoint with index
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+    } else if (endpoint === 'var/scmd' && index && value !== null) {
+      // var/scmd with index parameter
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+    } else if (endpoint === 'var' && index && value !== null) {
+      // Direct var endpoint with index and value
       gekkoParams.append('index', index);
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
       requestOptions.method = 'GET';
     } else if (endpoint.includes('/scmd') && value !== null) {
-      // Handle individual light commands
+      // Individual light commands with scmd path
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
       requestOptions.method = 'GET';
