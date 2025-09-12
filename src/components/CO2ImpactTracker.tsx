@@ -11,11 +11,40 @@ interface CO2ImpactTrackerProps {
 export function CO2ImpactTracker({ data }: CO2ImpactTrackerProps) {
   // Calculate CO2 savings based on energy data
   const calculateCO2Savings = () => {
-    if (!data?.energycosts) return { dailySavings: 0, yearlySavings: 0, totalSavings: 0 };
+    if (!data) return { dailySavings: 0, yearlySavings: 0, totalSavings: 0 };
     
-    const energyData = data.energycosts.split(';').map((val: string) => parseFloat(val) || 0);
-    const pvPower = energyData[8] || 0; // PV power generation in kWh
-    const dailyPV = pvPower / 1000; // Convert to kWh
+    let totalPVPower = 0;
+    let totalCurrentPower = 0;
+    
+    // Parse energycosts object structure (similar to EnergyDetailsDashboard)
+    if (data.energycosts && typeof data.energycosts === 'object') {
+      Object.entries(data.energycosts)
+        .filter(([key]) => key.startsWith('item'))
+        .forEach(([, meter]: [string, any]) => {
+          if (meter?.sumstate?.value) {
+            const values = meter.sumstate.value.split(';').map((val: string) => parseFloat(val) || 0);
+            totalCurrentPower += values[0] || 0; // Current power in kW
+            // Estimate PV based on negative grid values (typical for PV systems)
+            if (values[0] < 0) {
+              totalPVPower += Math.abs(values[0]);
+            }
+          }
+        });
+    }
+    
+    // Alternative: Check for energy management data from status
+    if (totalPVPower === 0 && data.energymanager?.item0?.sumstate?.value) {
+      const energyString = data.energymanager.item0.sumstate.value;
+      const values = energyString.split(';').map((v: string) => parseFloat(v) || 0);
+      
+      if (values.length >= 21) {
+        totalPVPower = (values[10] || 0) / 1000; // Convert from W to kW
+        totalCurrentPower = (values[9] || 0) / 1000; // Convert from W to kW
+      }
+    }
+    
+    // Calculate daily PV generation (estimate 8 hours of generation)
+    const dailyPV = totalPVPower * 8; // Rough estimate: 8 hours of generation per day
     
     // CO2 emission factor for grid electricity (Germany): ~0.4 kg CO2/kWh
     const co2FactorGrid = 0.4;
