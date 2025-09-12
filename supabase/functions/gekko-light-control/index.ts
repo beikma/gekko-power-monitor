@@ -77,10 +77,21 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
     }
 
     const statusData = await statusResponse.json();
-    console.log('Full status data received:', JSON.stringify(statusData, null, 2));
+    console.log('=== FULL STATUS DATA START ===');
+    console.log(JSON.stringify(statusData, null, 2));
+    console.log('=== FULL STATUS DATA END ===');
     
     const lights = statusData.lights || {};
-    console.log('Lights data:', JSON.stringify(lights, null, 2));
+    
+    // Check each light item structure
+    Object.entries(lights).forEach(([key, light]: [string, any]) => {
+      if (key.startsWith('item')) {
+        console.log(`=== LIGHT ${key} STRUCTURE ===`);
+        console.log(JSON.stringify(light, null, 2));
+        console.log('Available properties:', Object.keys(light));
+        console.log('=== END LIGHT STRUCTURE ===');
+      }
+    });
     
     console.log('Current light status retrieved');
 
