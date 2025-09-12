@@ -23,8 +23,8 @@ interface UseGekkoApiReturn {
 
 const defaultConfig: GekkoApiConfig = {
   username: 'mustermann@my-gekko.com',
-  key: 'tpc77Dlxn9kHtBUvoZ3hQ5',
-  gekkoid: '99Y9-JUTZ-8TYO-6P63',
+  key: 'HjR9j4BrruA8wZiBeiWXnD',
+  gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
   refreshInterval: 5000, // 5 seconds
 };
 
