@@ -77,21 +77,7 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
     }
 
     const statusData = await statusResponse.json();
-    console.log('=== FULL STATUS DATA START ===');
-    console.log(JSON.stringify(statusData, null, 2));
-    console.log('=== FULL STATUS DATA END ===');
-    
     const lights = statusData.lights || {};
-    
-    // Check each light item structure
-    Object.entries(lights).forEach(([key, light]: [string, any]) => {
-      if (key.startsWith('item')) {
-        console.log(`=== LIGHT ${key} STRUCTURE ===`);
-        console.log(JSON.stringify(light, null, 2));
-        console.log('Available properties:', Object.keys(light));
-        console.log('=== END LIGHT STRUCTURE ===');
-      }
-    });
     
     console.log('Current light status retrieved');
 
@@ -101,7 +87,6 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
       .filter(([key]) => key.startsWith('item'))
       .map(([key, light]: [string, any]) => {
         const values = light.sumstate?.value?.split(';') || [];
-        console.log(`Light ${key}:`, { light, values });
         return {
           id: key,
           isOn: parseInt(values[0]) === 1
@@ -114,38 +99,34 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
 
     console.log(`Toggling all lights ${shouldTurnOn ? 'ON' : 'OFF'} (${activeLights}/${lightItems.length} currently active)`);
 
-    // Send commands to all light groups first (faster bulk control)
-    const groupCommands = [];
-    const groups = Object.entries(lights)
-      .filter(([key]) => key.startsWith('group'))
-      .map(([key]) => key);
-
-    console.log('Groups found:', groups);
-
-    for (const groupId of groups) {
-      const groupCommand = {
-        groupId,
-        command,
-        endpoint: `var/${groupId}/scmd`,
-        url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${groupId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`
-      };
+    // Send commands to individual lights instead of groups
+    const lightCommands = [];
+    
+    for (const lightItem of lightItems) {
+      const commandUrl = `https://live.my-gekko.com/api/v1/var/${lightItem.id}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
       
-      console.log(`Sending command to group ${groupId}:`, groupCommand.url);
+      console.log(`Sending command to light ${lightItem.id}: ${commandUrl}`);
       
-      groupCommands.push(
-        fetch(groupCommand.url, { method: 'POST' })
+      lightCommands.push(
+        fetch(commandUrl, { 
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
           .then(response => {
-            console.log(`Group ${groupId} response:`, response.status);
-            return {
-              groupId,
+            console.log(`Light ${lightItem.id} response:`, response.status, response.statusText);
+            return response.text().then(text => ({
+              lightId: lightItem.id,
               success: response.ok,
-              status: response.status
-            };
+              status: response.status,
+              responseText: text
+            }));
           })
           .catch(error => {
-            console.error(`Group ${groupId} error:`, error);
+            console.error(`Light ${lightItem.id} error:`, error);
             return {
-              groupId,
+              lightId: lightItem.id,
               success: false,
               error: error.message
             };
@@ -153,14 +134,13 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
       );
     }
 
-    const groupResults = await Promise.all(groupCommands);
-    console.log('All group command results:', groupResults);
+    const lightResults = await Promise.all(lightCommands);
+    console.log('All light command results:', lightResults);
     
     return {
       action: shouldTurnOn ? 'all_on' : 'all_off',
       lightsAffected: lightItems.length,
-      groupsControlled: groups.length,
-      groupResults,
+      lightResults,
       command: command
     };
 
@@ -175,18 +155,28 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
     // Toggle the state - if currently on (1), turn off (0) and vice versa
     const newState = currentState === '1' ? '0' : '1';
     
-    const url = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`;
+    const commandUrl = `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`;
     
     console.log(`Toggling light ${lightId} from ${currentState} to ${newState}`);
+    console.log(`Command URL: ${commandUrl}`);
     
-    const response = await fetch(url, { method: 'POST' });
+    const response = await fetch(commandUrl, { 
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const responseText = await response.text();
+    console.log(`Light ${lightId} response:`, response.status, response.statusText, responseText);
     
     return {
       lightId,
       previousState: currentState,
       newState,
       success: response.ok,
-      status: response.status
+      status: response.status,
+      responseText: responseText
     };
 
   } catch (error) {
@@ -200,18 +190,28 @@ async function setBrightness(username: string, key: string, gekkoId: string, lig
     // Format: D followed by brightness percentage (0-100)
     const command = `D${Math.max(0, Math.min(100, brightness))}`;
     
-    const url = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
+    const commandUrl = `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
     
     console.log(`Setting brightness for ${lightId} to ${brightness}%`);
+    console.log(`Command URL: ${commandUrl}`);
     
-    const response = await fetch(url, { method: 'POST' });
+    const response = await fetch(commandUrl, { 
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const responseText = await response.text();
+    console.log(`Brightness ${lightId} response:`, response.status, response.statusText, responseText);
     
     return {
       lightId,
       brightness,
       command,
       success: response.ok,
-      status: response.status
+      status: response.status,
+      responseText: responseText
     };
 
   } catch (error) {
