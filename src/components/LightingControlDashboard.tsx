@@ -2,6 +2,8 @@ import { Lightbulb, Palette, Power, Settings } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 interface LightingControlDashboardProps {
   data: any;
@@ -49,6 +51,16 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
   const colorLights = lightItems.filter(light => light.hasColor).length;
   const dimmableLights = lightItems.filter(light => light.isDimmable).length;
 
+  // Master toggle state - true if more than half the lights are on
+  const allLightsOn = activeLights > totalLights / 2;
+
+  const handleMasterToggle = (checked: boolean) => {
+    // This would integrate with your lighting control system
+    // For demo purposes, we'll just show the toggle state
+    console.log(`Master toggle: ${checked ? 'All lights ON' : 'All lights OFF'}`);
+    // In a real implementation, you would send commands to turn all lights on/off
+  };
+
   const getColorStyle = (color: {r: number, g: number, b: number} | null) => {
     if (!color) return {};
     return {
@@ -71,6 +83,21 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {/* Master Toggle */}
+          <div className="flex items-center justify-between p-3 bg-energy-surface/50 rounded-lg border border-energy-border">
+            <div className="flex items-center space-x-2">
+              <Power className="h-4 w-4 text-energy-primary" />
+              <Label htmlFor="master-toggle" className="font-medium">
+                All Lights
+              </Label>
+            </div>
+            <Switch
+              id="master-toggle"
+              checked={allLightsOn}
+              onCheckedChange={handleMasterToggle}
+            />
+          </div>
+          
           <div className="text-center">
             <div className="text-3xl font-bold text-energy-text">{activeLights}</div>
             <div className="text-sm text-muted-foreground">Active Lights</div>
