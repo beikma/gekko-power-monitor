@@ -77,39 +77,54 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
     }
 
     const statusData = await statusResponse.json();
+    
+    // Also get the schema data to get the command indexes
+    const schemaResponse = await fetch(
+      `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}`
+    );
+    
+    if (!schemaResponse.ok) {
+      throw new Error(`Failed to get light schema: ${schemaResponse.status}`);
+    }
+
+    const schemaData = await schemaResponse.json();
     const lights = statusData.lights || {};
+    const lightSchema = schemaData.lights || {};
     
     console.log('Current light status retrieved');
 
     // Determine if we should turn all lights on or off
-    // Count active lights to decide the action
     const lightItems = Object.entries(lights)
       .filter(([key]) => key.startsWith('item'))
       .map(([key, light]: [string, any]) => {
         const values = light.sumstate?.value?.split(';') || [];
+        const commandIndex = lightSchema[key]?.scmd?.index;
         return {
           id: key,
-          isOn: parseInt(values[0]) === 1
+          isOn: parseInt(values[0]) === 1,
+          commandIndex
         };
-      });
+      })
+      .filter(item => item.commandIndex); // Only include lights with command indexes
 
     const activeLights = lightItems.filter(light => light.isOn).length;
-    const shouldTurnOn = activeLights < lightItems.length / 2; // Turn on if less than half are active
-    const command = shouldTurnOn ? '1' : '0'; // 1 = on, 0 = off
+    const shouldTurnOn = activeLights < lightItems.length / 2;
+    const command = shouldTurnOn ? '1' : '0';
 
     console.log(`Toggling all lights ${shouldTurnOn ? 'ON' : 'OFF'} (${activeLights}/${lightItems.length} currently active)`);
 
-    // Send commands to individual lights instead of groups
+    // Send commands using the command indexes
     const lightCommands = [];
     
     for (const lightItem of lightItems) {
-      const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightItem.id}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
+      // Try using the command index instead of item ID
+      const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${lightItem.commandIndex}&value=${command}`;
       
-      console.log(`Sending command to light ${lightItem.id}: ${commandUrl}`);
+      console.log(`Sending command to light ${lightItem.id} (index ${lightItem.commandIndex}): ${commandUrl}`);
       
       lightCommands.push(
         fetch(commandUrl, { 
-          method: 'GET',  // Changed to GET
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json'
           }

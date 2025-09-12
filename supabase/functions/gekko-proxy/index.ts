@@ -19,6 +19,7 @@ serve(async (req) => {
     const key = url.searchParams.get('key');
     const gekkoid = url.searchParams.get('gekkoid');
     const value = url.searchParams.get('value'); // For command requests
+    const index = url.searchParams.get('index'); // For command index
 
     if (!endpoint || !username || !key || !gekkoid) {
       return new Response(
@@ -42,12 +43,17 @@ serve(async (req) => {
       method: req.method,
     };
 
-    // Handle command requests (scmd endpoints) - myGEKKO uses GET for commands
-    if (endpoint.includes('/scmd') && value !== null) {
-      // For commands, add value to URL parameters and always use GET
+    // Handle command requests using index parameter
+    if (endpoint === 'var/scmd' && index && value !== null) {
+      gekkoParams.append('index', index);
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
-      requestOptions.method = 'GET';  // Force GET for commands
+      requestOptions.method = 'GET';
+    } else if (endpoint.includes('/scmd') && value !== null) {
+      // Handle individual light commands
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
     } else {
       // For regular GET requests
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
