@@ -3,6 +3,7 @@ import { PowerCard } from "@/components/PowerCard";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
 import { useEnergyAI } from "@/hooks/useEnergyAI";
 import EnergyInsights from "@/components/EnergyInsights";
+import BuildingProfile from "@/components/BuildingProfile";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Zap, Home, Activity } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -332,9 +333,14 @@ const Index = () => {
           />
         </div>
 
-        {/* AI Energy Insights */}
-        <div className="mb-8">
-          <EnergyInsights />
+        {/* AI Energy Insights and Building Profile */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
+          <div className="xl:col-span-2">
+            <EnergyInsights />
+          </div>
+          <div>
+            <BuildingProfile />
+          </div>
         </div>
 
         {/* Building Management Insights */}
