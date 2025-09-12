@@ -262,7 +262,7 @@ export default function SmartHomeDashboard({
         </TabsContent>
 
         <TabsContent value="lighting" className="mt-6">
-          <LightingControlDashboard data={status} />
+          <LightingControlDashboard data={data} status={status} />
         </TabsContent>
 
         <TabsContent value="energy" className="mt-6">

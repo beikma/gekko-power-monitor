@@ -9,16 +9,18 @@ import { supabase } from "@/integrations/supabase/client";
 import { useState } from "react";
 
 interface LightingControlDashboardProps {
-  data: any;
+  data: any;  // Schema data with names
+  status: any;  // Status data with current values
 }
 
-export default function LightingControlDashboard({ data }: LightingControlDashboardProps) {
+export default function LightingControlDashboard({ data, status }: LightingControlDashboardProps) {
   const { toast } = useToast();
   const [isToggling, setIsToggling] = useState(false);
   
-  // Extract lighting data
-  const lights = data?.lights || {};
-  const lightItems = Object.entries(lights)
+  // Extract lighting data - names from data, states from status
+  const lightSchema = data?.lights || {};
+  const lightStatus = status?.lights || {};
+  const lightItems = Object.entries(lightStatus)
     .filter(([key]) => key.startsWith('item'))
     .map(([key, light]: [string, any]) => {
       const values = light.sumstate?.value?.split(';') || [];
@@ -31,8 +33,9 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
       const g = (colorValue >> 8) & 0xFF;
       const b = colorValue & 0xFF;
       
-      // Use the real name from the GEKKO API response
-      const realName = light.name || `Light ${key.replace('item', '')}`;
+      // Get the real name from the schema data
+      const schemaData = lightSchema[key];
+      const realName = schemaData?.name || `Light ${key.replace('item', '')}`;
       
       return {
         id: key,
@@ -47,7 +50,7 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
     .filter(light => light.isOn || light.brightness > 0); // Only show active or recently used lights
 
   // Extract lighting groups
-  const groups = Object.entries(lights)
+  const groups = Object.entries(lightStatus)
     .filter(([key]) => key.startsWith('group'))
     .map(([key, group]: [string, any]) => {
       // Groups don't have names in the API, so we'll use generic names
