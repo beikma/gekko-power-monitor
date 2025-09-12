@@ -173,11 +173,24 @@ export default function AdvancedAIDashboard() {
   };
 
   const parseInsights = (insights: string) => {
+    if (!insights) return {};
+    
     try {
-      // Try to parse as JSON first
-      return JSON.parse(insights);
+      // First try to parse as JSON array (from edge function fallback)
+      const parsed = JSON.parse(insights);
+      if (Array.isArray(parsed)) {
+        // Convert array format to object format expected by UI
+        const result: any = {};
+        parsed.forEach((insight, index) => {
+          const key = insight.type || `insight_${index}`;
+          result[key] = `**${insight.title}**\n${insight.content}`;
+        });
+        return result;
+      }
+      // If already an object, return as-is
+      return parsed;
     } catch {
-      // If not JSON, parse structured text
+      // If not JSON, parse structured text format
       const sections = insights.split(/\d+\.\s+\*\*([^*]+)\*\*/);
       const parsed: any = {};
       
@@ -185,6 +198,11 @@ export default function AdvancedAIDashboard() {
         const title = sections[i].toLowerCase().replace(/\s+/g, '_');
         const content = sections[i + 1]?.trim();
         parsed[title] = content;
+      }
+      
+      // If no structured format found, create a single insight
+      if (Object.keys(parsed).length === 0) {
+        parsed.analysis_results = insights;
       }
       
       return parsed;
