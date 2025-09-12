@@ -73,86 +73,58 @@ export function CO2ImpactTracker({ data }: CO2ImpactTrackerProps) {
 
   return (
     <Card className="bg-gradient-to-br from-emerald-50 to-green-100 dark:from-emerald-950 dark:to-green-900 border-emerald-200 dark:border-emerald-800">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-emerald-800 dark:text-emerald-100 flex items-center gap-2">
-              <Leaf className="h-5 w-5" />
-              CO₂ Impact Tracker
-            </CardTitle>
-            <CardDescription className="text-emerald-600 dark:text-emerald-300">
-              Environmental impact through smart automation
-            </CardDescription>
-          </div>
-          <Badge variant="secondary" className="bg-emerald-200 text-emerald-800 dark:bg-emerald-800 dark:text-emerald-200">
-            Live Savings
-          </Badge>
-        </div>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-emerald-800 dark:text-emerald-100 flex items-center gap-2 text-lg">
+          <Leaf className="h-4 w-4" />
+          CO₂ Impact Tracker
+        </CardTitle>
       </CardHeader>
-      <CardContent className="space-y-6">
-        {/* Total Savings Display */}
-        <div className="text-center p-4 bg-white/50 dark:bg-black/20 rounded-lg border border-emerald-200 dark:border-emerald-700">
-          <div className="text-3xl font-bold text-emerald-800 dark:text-emerald-100">
+      <CardContent className="space-y-3">
+        {/* Main CO2 Display */}
+        <div className="text-center">
+          <div className="text-2xl font-bold text-emerald-800 dark:text-emerald-100">
             {co2Data.totalSavings.toFixed(1)} kg
           </div>
-          <div className="text-sm text-emerald-600 dark:text-emerald-300">
+          <div className="text-xs text-emerald-600 dark:text-emerald-300">
             Total CO₂ Saved
           </div>
         </div>
 
-        {/* Yearly Progress */}
-        <div>
-          <div className="flex justify-between text-sm mb-2">
-            <span className="text-emerald-700 dark:text-emerald-300">Yearly Target Progress</span>
-            <span className="text-emerald-800 dark:text-emerald-200 font-medium">
-              {co2Data.yearlySavings.toFixed(0)} / {yearlyTarget} kg
-            </span>
-          </div>
-          <Progress value={progressPercent} className="h-2" />
-        </div>
-
-        {/* Impact Comparisons */}
-        <div className="grid grid-cols-2 gap-4">
-          <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/30 rounded-lg">
-            <TreePine className="h-8 w-8 text-green-600" />
-            <div>
-              <div className="font-semibold text-emerald-800 dark:text-emerald-200">
-                {treesEquivalent}
-              </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400">
-                Trees Planted
-              </div>
+        {/* Compact Comparisons */}
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="text-center">
+            <TreePine className="h-4 w-4 text-green-600 mx-auto mb-1" />
+            <div className="font-semibold text-emerald-800 dark:text-emerald-200">
+              {treesEquivalent}
+            </div>
+            <div className="text-emerald-600 dark:text-emerald-400">
+              Trees Planted
             </div>
           </div>
           
-          <div className="flex items-center gap-3 p-3 bg-white/60 dark:bg-black/30 rounded-lg">
-            <Car className="h-8 w-8 text-blue-600" />
-            <div>
-              <div className="font-semibold text-emerald-800 dark:text-emerald-200">
-                {(carKmEquivalent / 1000).toFixed(0)}k km
-              </div>
-              <div className="text-xs text-emerald-600 dark:text-emerald-400">
-                Car Distance
-              </div>
+          <div className="text-center">
+            <Car className="h-4 w-4 text-blue-600 mx-auto mb-1" />
+            <div className="font-semibold text-emerald-800 dark:text-emerald-200">
+              {(carKmEquivalent / 1000).toFixed(0)}k km
+            </div>
+            <div className="text-emerald-600 dark:text-emerald-400">
+              Car Distance
+            </div>
+          </div>
+
+          <div className="text-center">
+            <Euro className="h-4 w-4 text-emerald-700 dark:text-emerald-300 mx-auto mb-1" />
+            <div className="font-semibold text-emerald-800 dark:text-emerald-200">
+              €{euroSavings}
+            </div>
+            <div className="text-emerald-600 dark:text-emerald-400">
+              Carbon Credits
             </div>
           </div>
         </div>
 
-        {/* Financial Impact */}
-        <div className="flex items-center justify-between p-3 bg-gradient-to-r from-emerald-100 to-green-100 dark:from-emerald-900 dark:to-green-900 rounded-lg border border-emerald-300 dark:border-emerald-600">
-          <div className="flex items-center gap-2">
-            <Euro className="h-5 w-5 text-emerald-700 dark:text-emerald-300" />
-            <span className="text-emerald-800 dark:text-emerald-200 font-medium">
-              Carbon Credits Value
-            </span>
-          </div>
-          <div className="text-xl font-bold text-emerald-800 dark:text-emerald-100">
-            €{euroSavings.toLocaleString()}
-          </div>
-        </div>
-
-        {/* Daily Savings */}
-        <div className="text-center text-sm text-emerald-600 dark:text-emerald-400">
+        {/* Today's saving */}
+        <div className="text-center text-xs text-emerald-600 dark:text-emerald-400 pt-1 border-t border-emerald-200 dark:border-emerald-700">
           Today: <span className="font-semibold">{co2Data.dailySavings.toFixed(2)} kg CO₂</span> saved
         </div>
       </CardContent>
