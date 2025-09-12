@@ -184,27 +184,45 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
       const commandIndex = schemaData.lights?.[lightId]?.scmd?.index;
       console.log(`Command index for ${lightId}: ${commandIndex}`);
       
-      // Test different URL formats sequentially
+      // Test different command approaches for myGEKKO
       const testFormats = [
         {
-          name: "direct command to myGEKKO",
-          url: `https://live.my-gekko.com/api/v1/var/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
+          name: "POST to myGEKKO scmd",
+          url: `https://live.my-gekko.com/api/v1/var/scmd`,
+          method: 'POST',
+          body: JSON.stringify({
+            username: username,
+            key: key,
+            gekkoid: gekkoId,
+            index: commandIndex,
+            value: newState
+          })
         },
         {
-          name: "myGEKKO item command",
-          url: `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`
+          name: "PUT to myGEKKO with index",
+          url: `https://live.my-gekko.com/api/v1/var/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
+          method: 'PUT'
         },
         {
-          name: "proxy scmd endpoint",
-          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
+          name: "POST to item specific endpoint",
+          url: `https://live.my-gekko.com/api/v1/var/${lightId}/scmd`,
+          method: 'POST', 
+          body: JSON.stringify({
+            username: username,
+            key: key,
+            gekkoid: gekkoId,
+            value: newState
+          })
         },
         {
-          name: "proxy var/scmd with index", 
-          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
+          name: "direct myGEKKO GET scmd", 
+          url: `https://live.my-gekko.com/api/v1/var/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
+          method: 'GET'
         },
         {
-          name: "proxy item path",
-          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`
+          name: "myGEKKO item GET",
+          url: `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`,
+          method: 'GET'
         }
       ];
       
@@ -214,10 +232,16 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
         console.log(`Testing ${format.name}: ${format.url}`);
         
         try {
-          const response = await fetch(format.url, {
-            method: 'GET',
+          const requestOptions: any = {
+            method: format.method || 'GET',
             headers: { 'Content-Type': 'application/json' }
-          });
+          };
+          
+          if (format.body) {
+            requestOptions.body = format.body;
+          }
+          
+          const response = await fetch(format.url, requestOptions);
           
           const responseText = await response.text();
           console.log(`${format.name} response: ${response.status} - ${responseText}`);
@@ -226,12 +250,13 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
             format: format.name,
             success: response.ok,
             status: response.status,
-            responseText
+            responseText,
+            method: format.method || 'GET'
           });
           
-          // If we get a successful response, use this format
-          if (response.ok && !responseText.includes('error')) {
-            console.log(`SUCCESS! Format "${format.name}" worked!`);
+          // If we get a successful response and it's not just the command description, use this format
+          if (response.ok && !responseText.includes('"description"') && !responseText.includes('"format"')) {
+            console.log(`SUCCESS! Format "${format.name}" worked and got execution response!`);
             return {
               lightId,
               previousState: currentState,
