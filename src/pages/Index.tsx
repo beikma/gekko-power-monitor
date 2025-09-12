@@ -37,96 +37,23 @@ const Index = () => {
 
     // Extract comprehensive weather data
     const extractWeather = () => {
-      console.log('Full API data for weather extraction:', data);
-      console.log('Status data for weather:', status);
-      
       const weather = {
         current: {
-          temperature: extractValue('meteo.temperature.value') || 
-                      extractValue('weather.temperature') ||
-                      extractValue('globals.meteo.temperature.value') ||
-                      (status?.meteo?.temperature?.value ? parseFloat(status.meteo.temperature.value) : null),
-          humidity: extractValue('meteo.humidity.value') || 
-                   extractValue('weather.humidity') ||
-                   extractValue('globals.meteo.humidity.value') ||
-                   (status?.meteo?.humidity?.value ? parseFloat(status.meteo.humidity.value) : null),
-          pressure: extractValue('meteo.pressure.value') || 
-                   extractValue('weather.pressure') ||
-                   extractValue('globals.meteo.pressure.value') || null,
-          windSpeed: extractValue('meteo.wind.speed.value') || 
-                    extractValue('weather.wind.speed') ||
-                    extractValue('meteo.windspeed.value') ||
-                    extractValue('globals.meteo.wind.value') || null,
-          windDirection: extractValue('meteo.wind.direction.value') || 
-                        extractValue('weather.wind.direction') ||
-                        extractValue('meteo.winddirection.value') || null,
-          uvIndex: extractValue('meteo.uv.value') || 
-                  extractValue('weather.uv') ||
-                  extractValue('meteo.uvindex.value') || null,
-          visibility: extractValue('meteo.visibility.value') || 
-                     extractValue('weather.visibility') ||
-                     extractValue('meteo.sicht.value') || null,
-          condition: data.meteo?.condition?.value || 
-                    data.weather?.condition || 
-                    data.globals?.meteo?.condition?.value || 'Unknown'
+          temperature: status?.globals?.meteo?.temperature?.value ? parseFloat(status.globals.meteo.temperature.value) : null,
+          humidity: status?.globals?.meteo?.humidity?.value ? parseFloat(status.globals.meteo.humidity.value) : null,
+          pressure: status?.globals?.meteo?.pressure?.value ? parseFloat(status.globals.meteo.pressure.value) : null,
+          windSpeed: status?.globals?.meteo?.wind?.value ? parseFloat(status.globals.meteo.wind.value) : null,
+          windDirection: status?.globals?.meteo?.windDirection?.value ? parseFloat(status.globals.meteo.windDirection.value) : null,
+          uvIndex: status?.globals?.meteo?.uvIndex?.value ? parseFloat(status.globals.meteo.uvIndex.value) : null,
+          visibility: status?.globals?.meteo?.twilight?.value ? parseFloat(status.globals.meteo.twilight.value) : null,
+          condition: 'Clear' // Default condition since we have basic weather data
         },
         forecast: []
       };
 
       console.log('Extracted weather current:', weather.current);
 
-      // Check multiple possible locations for weather data
-      const possibleWeatherPaths = [
-        data.meteo,
-        data.weather,
-        data.globals?.meteo,
-        data.globals?.weather,
-        status?.meteo,
-        status?.weather
-      ];
-
-      console.log('Possible weather paths:', possibleWeatherPaths);
-
-      // Extract forecast data if available
-      if (data.meteo && data.meteo.forecast) {
-        Object.entries(data.meteo.forecast).forEach(([day, forecast]: [string, any]) => {
-          if (forecast && typeof forecast === 'object') {
-            weather.forecast.push({
-              day: day,
-              tempMin: parseFloat(forecast.tempMin?.value) || null,
-              tempMax: parseFloat(forecast.tempMax?.value) || null,
-              humidity: parseFloat(forecast.humidity?.value) || null,
-              windSpeed: parseFloat(forecast.windSpeed?.value) || null,
-              condition: forecast.condition?.value || 'Unknown',
-              rain: parseFloat(forecast.rain?.value) || null
-            });
-          }
-        });
-      }
-
-      // Also check for weather in globals
-      if (data.globals && data.globals.meteo) {
-        console.log('Found weather in globals.meteo:', data.globals.meteo);
-        // Try to extract from globals structure
-        Object.entries(data.globals.meteo).forEach(([key, value]: [string, any]) => {
-          if (value && typeof value === 'object' && value.value !== undefined) {
-            const numValue = parseFloat(value.value);
-            if (!isNaN(numValue)) {
-              if (key.toLowerCase().includes('temp')) {
-                weather.current.temperature = weather.current.temperature || numValue;
-              } else if (key.toLowerCase().includes('humid') || key.toLowerCase().includes('feuch')) {
-                weather.current.humidity = weather.current.humidity || numValue;
-              } else if (key.toLowerCase().includes('wind')) {
-                weather.current.windSpeed = weather.current.windSpeed || numValue;
-              } else if (key.toLowerCase().includes('pressure') || key.toLowerCase().includes('druck')) {
-                weather.current.pressure = weather.current.pressure || numValue;
-              }
-            }
-          }
-        });
-      }
-
-      console.log('Final extracted weather:', weather);
+      // Extract forecast data if available (simplified since basic API doesn't have forecast)
       return weather;
     };
 
