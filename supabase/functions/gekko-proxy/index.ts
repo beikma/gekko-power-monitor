@@ -3,6 +3,7 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
 }
 
 serve(async (req) => {
@@ -36,22 +37,28 @@ serve(async (req) => {
       gekkoid,
     });
 
-    // Add value parameter if it's a command request (POST) and value is provided
-    if (req.method === 'POST' && value !== null) {
-      gekkoParams.append('value', value);
-    }
+    let gekkoUrl;
+    let requestOptions: RequestInit = {
+      method: req.method,
+    };
 
-    const gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+    // Handle command requests (scmd endpoints)
+    if (endpoint.includes('/scmd') && req.method === 'POST' && value !== null) {
+      // For commands, add value to URL parameters
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.headers = {
+        'Content-Type': 'application/json'
+      };
+    } else {
+      // For regular GET requests
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+    }
     
     console.log(`Proxying ${req.method} request to: ${gekkoUrl}`);
 
-    // Make the request to myGEKKO API with same method
-    const response = await fetch(gekkoUrl, {
-      method: req.method,
-      headers: req.method === 'POST' ? {
-        'Content-Type': 'application/json'
-      } : undefined
-    });
+    // Make the request to myGEKKO API
+    const response = await fetch(gekkoUrl, requestOptions);
     
     if (!response.ok) {
       console.error(`myGEKKO API error: ${response.status} - ${response.statusText}`);
