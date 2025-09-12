@@ -44,7 +44,7 @@ export function useEnergyAI() {
           grid_power: reading.gridPower,
           temperature: reading.temperature,
           humidity: reading.humidity,
-          weather: reading.weather,
+          weather_condition: reading.weather,
           efficiency_score: reading.efficiencyScore,
           cost_estimate: reading.costEstimate,
         }]);
