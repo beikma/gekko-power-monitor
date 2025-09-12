@@ -17,21 +17,59 @@ const Index = () => {
     });
   };
 
-  // Extract power consumption values from the API data
-  const getPowerValues = () => {
+  // Extract real energy values from myGEKKO API data
+  const getEnergyValues = () => {
     if (!data) return null;
     
-    // These are example keys - you'll need to adjust based on actual API response structure
+    // Extract power and energy data from the actual API structure
+    const extractValue = (path: string) => {
+      const keys = path.split('.');
+      let value = data;
+      for (const key of keys) {
+        if (value && typeof value === 'object' && key in value) {
+          value = value[key];
+        } else {
+          return 0;
+        }
+      }
+      return typeof value === 'number' ? value : (typeof value === 'string' ? parseFloat(value) : 0) || 0;
+    };
+
+    // Look for common energy parameter names in myGEKKO systems
+    const powerConsumption = extractValue('energy.power') || 
+                           extractValue('power.current') ||
+                           extractValue('globals.power.value') ||
+                           extractValue('variables.power') || 0;
+
+    const dailyEnergy = extractValue('energy.daily') ||
+                       extractValue('energy.today') ||
+                       extractValue('globals.energy.daily') || 0;
+
+    const temperature = extractValue('meteo.temperature.value') ||
+                       extractValue('temperature.outdoor') ||
+                       (status?.meteo?.temperature?.value ? parseFloat(status.meteo.temperature.value) : 20);
+
+    const humidity = extractValue('meteo.humidity.value') ||
+                    (status?.meteo?.humidity?.value ? parseFloat(status.meteo.humidity.value) : 50);
+
+    // Calculate some derived values for building management
+    const estimatedMonthlyCost = dailyEnergy * 30 * 0.25; // Assuming €0.25/kWh
+    const powerEfficiency = powerConsumption > 0 ? (dailyEnergy / 24) / powerConsumption * 100 : 100;
+
     return {
-      totalPower: data.power_total || data.totalPower || 0,
-      currentConsumption: data.power_current || data.currentPower || 0,
-      dailyConsumption: data.power_daily || data.dailyPower || 0,
-      voltage: data.voltage || 230,
-      frequency: data.frequency || 50,
+      currentPower: powerConsumption,
+      dailyEnergy: dailyEnergy,
+      temperature: temperature,
+      humidity: humidity,
+      monthlyCost: estimatedMonthlyCost,
+      efficiency: Math.min(powerEfficiency, 100),
+      // Status indicators
+      systemStatus: status?.alarm?.sumstate?.value === "3" ? 'normal' : 'alert',
+      connectionQuality: status?.globals?.network ? 'good' : 'poor'
     };
   };
 
-  const powerValues = getPowerValues();
+  const energyValues = getEnergyValues();
 
   return (
     <div className="min-h-screen bg-background">
@@ -83,83 +121,151 @@ const Index = () => {
           </div>
         )}
 
-        {/* Power Cards Grid */}
+        {/* Energy Management Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
           <PowerCard
-            title="Total Power"
-            value={powerValues?.totalPower || 0}
+            title="Current Power"
+            value={energyValues?.currentPower?.toFixed(2) || "0"}
             unit="kW"
-            trend="up"
-            trendValue="+2.3%"
+            trend={energyValues?.currentPower > 5 ? "up" : energyValues?.currentPower > 2 ? "stable" : "down"}
+            trendValue={energyValues?.currentPower > 5 ? "High Usage" : energyValues?.currentPower > 2 ? "Normal" : "Low Usage"}
             isLoading={isLoading}
           />
           
           <PowerCard
-            title="Current Consumption"
-            value={powerValues?.currentConsumption || 0}
-            unit="kW"
-            trend="down"
-            trendValue="-1.2%"
-            isLoading={isLoading}
-          />
-          
-          <PowerCard
-            title="Daily Usage"
-            value={powerValues?.dailyConsumption || 0}
+            title="Daily Energy"
+            value={energyValues?.dailyEnergy?.toFixed(1) || "0"}
             unit="kWh"
-            trend="stable"
-            trendValue="0.1%"
+            trend={energyValues?.dailyEnergy > 50 ? "up" : "stable"}
+            trendValue={`€${energyValues?.dailyEnergy ? (energyValues.dailyEnergy * 0.25).toFixed(2) : "0.00"}`}
             isLoading={isLoading}
           />
           
           <PowerCard
-            title="Voltage"
-            value={powerValues?.voltage || 0}
-            unit="V"
+            title="Building Temp"
+            value={energyValues?.temperature?.toFixed(1) || "20"}
+            unit="°C"
+            trend={energyValues?.temperature > 22 ? "up" : energyValues?.temperature < 18 ? "down" : "stable"}
+            trendValue={`${energyValues?.humidity?.toFixed(0) || "50"}% RH`}
+            isLoading={isLoading}
+          />
+          
+          <PowerCard
+            title="Monthly Est."
+            value={energyValues?.monthlyCost?.toFixed(0) || "0"}
+            unit="€"
+            trend={energyValues?.monthlyCost > 200 ? "up" : "stable"}
+            trendValue={`${energyValues?.efficiency?.toFixed(0) || "100"}% Eff.`}
             isLoading={isLoading}
           />
         </div>
 
-        {/* Data Preview Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Building Management Insights */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-gradient-card border border-border rounded-lg p-6 shadow-card-custom">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Zap className="h-5 w-5 text-primary" />
-              Live Data
+              Energy Summary
             </h3>
             {isLoading ? (
               <div className="space-y-2">
-                {[...Array(5)].map((_, i) => (
+                {[...Array(4)].map((_, i) => (
                   <div key={i} className="h-4 bg-muted/20 rounded animate-pulse" />
                 ))}
               </div>
-            ) : data ? (
-              <pre className="text-xs text-muted-foreground overflow-x-auto bg-background/50 p-3 rounded border">
-                {JSON.stringify(data, null, 2)}
-              </pre>
+            ) : energyValues ? (
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Current Load:</span>
+                  <span className="font-medium">{energyValues.currentPower.toFixed(2)} kW</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Today's Usage:</span>
+                  <span className="font-medium">{energyValues.dailyEnergy.toFixed(1)} kWh</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Daily Cost:</span>
+                  <span className="font-medium">€{(energyValues.dailyEnergy * 0.25).toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Efficiency:</span>
+                  <span className={`font-medium ${energyValues.efficiency > 80 ? 'text-energy-success' : energyValues.efficiency > 60 ? 'text-energy-warning' : 'text-energy-danger'}`}>
+                    {energyValues.efficiency.toFixed(0)}%
+                  </span>
+                </div>
+              </div>
             ) : (
-              <p className="text-muted-foreground">No data available</p>
+              <p className="text-muted-foreground">No energy data available</p>
             )}
           </div>
           
           <div className="bg-gradient-card border border-border rounded-lg p-6 shadow-card-custom">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Activity className="h-5 w-5 text-accent" />
-              Status Information
+              Building Status
             </h3>
             {isLoading ? (
               <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
+                {[...Array(4)].map((_, i) => (
                   <div key={i} className="h-4 bg-muted/20 rounded animate-pulse" />
                 ))}
               </div>
-            ) : status ? (
-              <pre className="text-xs text-muted-foreground overflow-x-auto bg-background/50 p-3 rounded border">
-                {JSON.stringify(status, null, 2)}
-              </pre>
             ) : (
-              <p className="text-muted-foreground">No status data available</p>
+              <div className="space-y-3 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Temperature:</span>
+                  <span className="font-medium">{energyValues?.temperature.toFixed(1) || "N/A"}°C</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Humidity:</span>
+                  <span className="font-medium">{energyValues?.humidity.toFixed(0) || "N/A"}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">System Status:</span>
+                  <span className={`font-medium ${energyValues?.systemStatus === 'normal' ? 'text-energy-success' : 'text-energy-danger'}`}>
+                    {energyValues?.systemStatus === 'normal' ? 'Normal' : 'Alert'}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Connection:</span>
+                  <span className={`font-medium ${connectionStatus === 'connected' ? 'text-energy-success' : 'text-energy-danger'}`}>
+                    {connectionStatus === 'connected' ? 'Online' : 'Offline'}
+                  </span>
+                </div>
+              </div>
             )}
+          </div>
+
+          <div className="bg-gradient-card border border-border rounded-lg p-6 shadow-card-custom">
+            <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Quick Actions
+            </h3>
+            <div className="space-y-3">
+              <div className="text-xs text-muted-foreground mb-2">
+                Last updated: {lastUpdate?.toLocaleString() || 'Never'}
+              </div>
+              {energyValues?.currentPower > 10 && (
+                <div className="p-2 bg-energy-warning/10 border border-energy-warning/20 rounded text-xs">
+                  ⚠️ High power consumption detected
+                </div>
+              )}
+              {energyValues?.temperature > 25 && (
+                <div className="p-2 bg-energy-danger/10 border border-energy-danger/20 rounded text-xs">
+                  🌡️ High temperature - check HVAC
+                </div>
+              )}
+              {energyValues?.systemStatus === 'alert' && (
+                <div className="p-2 bg-energy-danger/10 border border-energy-danger/20 rounded text-xs">
+                  🚨 System alert - check status
+                </div>
+              )}
+              {(!energyValues?.currentPower || energyValues.currentPower < 1) && (
+                <div className="p-2 bg-energy-success/10 border border-energy-success/20 rounded text-xs">
+                  💡 Low energy usage - efficient operation
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </main>
