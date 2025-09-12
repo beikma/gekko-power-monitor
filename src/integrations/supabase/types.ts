@@ -14,6 +14,84 @@ export type Database = {
   }
   public: {
     Tables: {
+      building_info: {
+        Row: {
+          address: string | null
+          building_name: string
+          building_type: string | null
+          city: string | null
+          cooling_system: string | null
+          country: string | null
+          created_at: string
+          energy_rating: string | null
+          floors: number | null
+          heating_system: string | null
+          id: string
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          occupancy: number | null
+          postal_code: string | null
+          renewable_energy: boolean | null
+          rooms: number | null
+          solar_panels: boolean | null
+          total_area: number | null
+          updated_at: string
+          usage_type: string | null
+          year_built: number | null
+        }
+        Insert: {
+          address?: string | null
+          building_name: string
+          building_type?: string | null
+          city?: string | null
+          cooling_system?: string | null
+          country?: string | null
+          created_at?: string
+          energy_rating?: string | null
+          floors?: number | null
+          heating_system?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          occupancy?: number | null
+          postal_code?: string | null
+          renewable_energy?: boolean | null
+          rooms?: number | null
+          solar_panels?: boolean | null
+          total_area?: number | null
+          updated_at?: string
+          usage_type?: string | null
+          year_built?: number | null
+        }
+        Update: {
+          address?: string | null
+          building_name?: string
+          building_type?: string | null
+          city?: string | null
+          cooling_system?: string | null
+          country?: string | null
+          created_at?: string
+          energy_rating?: string | null
+          floors?: number | null
+          heating_system?: string | null
+          id?: string
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          occupancy?: number | null
+          postal_code?: string | null
+          renewable_energy?: boolean | null
+          rooms?: number | null
+          solar_panels?: boolean | null
+          total_area?: number | null
+          updated_at?: string
+          usage_type?: string | null
+          year_built?: number | null
+        }
+        Relationships: []
+      }
       energy_insights: {
         Row: {
           category: string | null

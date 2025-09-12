@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react';
 import { useGekkoApi } from './useGekkoApi';
+import { useBuildingData } from './useBuildingData';
 
 interface BuildingInfo {
   name: string;
@@ -50,13 +51,35 @@ interface LocationEnrichment {
 
 export function useBuildingInfo() {
   const { data, status } = useGekkoApi();
+  const { manualInfo } = useBuildingData();
   const [locationData, setLocationData] = useState<LocationEnrichment | null>(null);
   const [isLoadingLocation, setIsLoadingLocation] = useState(false);
 
   // Extract building information from myGEKKO API response
   const buildingInfo: BuildingInfo = useMemo(() => {
+    // First get manual data
+    const manual = manualInfo ? {
+      name: manualInfo.building_name,
+      gekkoid: '99Y9-JUTZ-8TYO-6P63',
+      location: {
+        latitude: manualInfo.latitude,
+        longitude: manualInfo.longitude,
+        address: manualInfo.address,
+        city: manualInfo.city,
+        country: manualInfo.country,
+        timezone: undefined,
+      },
+      specifications: {
+        totalArea: manualInfo.total_area,
+        floors: manualInfo.floors,
+        rooms: manualInfo.rooms,
+        yearBuilt: manualInfo.year_built,
+        buildingType: manualInfo.building_type,
+      },
+    } : null;
+
     if (!data || !status) {
-      return {
+      return manual || {
         name: 'myGEKKO Building',
         gekkoid: '99Y9-JUTZ-8TYO-6P63',
       };
@@ -86,42 +109,53 @@ export function useBuildingInfo() {
     };
 
     // Extract building metadata from various API sections
-    const buildingName = extractString('globals.system.name') || 
+    const buildingName = manual?.name || 
+                         extractString('globals.system.name') || 
                          extractString('system.building.name') ||
                          extractString('config.building.name') ||
                          'myGEKKO Smart Building';
 
     const gekkoid = extractString('system.id') || '99Y9-JUTZ-8TYO-6P63';
 
-    // Try to extract location information
+    // Try to extract location information (prefer manual data)
     const location = {
-      latitude: extractNumber('globals.location.latitude') || 
+      latitude: manual?.location?.latitude ||
+                extractNumber('globals.location.latitude') || 
                 extractNumber('config.location.lat') ||
                 extractNumber('location.coordinates.lat'),
-      longitude: extractNumber('globals.location.longitude') || 
+      longitude: manual?.location?.longitude ||
+                 extractNumber('globals.location.longitude') || 
                  extractNumber('config.location.lng') ||
                  extractNumber('location.coordinates.lng'),
-      address: extractString('globals.location.address') ||
+      address: manual?.location?.address ||
+               extractString('globals.location.address') ||
                extractString('config.building.address'),
-      city: extractString('globals.location.city') ||
+      city: manual?.location?.city ||
+            extractString('globals.location.city') ||
             extractString('config.building.city'),
-      country: extractString('globals.location.country') ||
+      country: manual?.location?.country ||
+               extractString('globals.location.country') ||
                extractString('config.building.country'),
       timezone: extractString('globals.system.timezone') ||
                 extractString('config.system.timezone'),
     };
 
-    // Extract building specifications
+    // Extract building specifications (prefer manual data)
     const specifications = {
-      totalArea: extractNumber('config.building.area') ||
+      totalArea: manual?.specifications?.totalArea ||
+                 extractNumber('config.building.area') ||
                  extractNumber('globals.building.totalArea'),
-      floors: extractNumber('config.building.floors') ||
+      floors: manual?.specifications?.floors ||
+              extractNumber('config.building.floors') ||
               extractNumber('globals.building.floors'),
-      rooms: extractNumber('config.building.rooms') ||
+      rooms: manual?.specifications?.rooms ||
+             extractNumber('config.building.rooms') ||
              Object.keys(data.globals?.raumregelung || {}).length || undefined,
-      yearBuilt: extractNumber('config.building.yearBuilt') ||
+      yearBuilt: manual?.specifications?.yearBuilt ||
+                 extractNumber('config.building.yearBuilt') ||
                  extractNumber('globals.building.constructionYear'),
-      buildingType: extractString('config.building.type') ||
+      buildingType: manual?.specifications?.buildingType ||
+                    extractString('config.building.type') ||
                     extractString('globals.building.category') ||
                     'Residential',
     };
@@ -156,12 +190,12 @@ export function useBuildingInfo() {
     return {
       name: buildingName,
       gekkoid,
-      location: Object.values(location).some(v => v !== null) ? location : undefined,
+      location: Object.values(location).some(v => v !== null && v !== undefined) ? location : undefined,
       specifications: Object.values(specifications).some(v => v !== null && v !== undefined) ? specifications : undefined,
       systems: Object.values(systems).some(v => v !== null && v !== undefined && (!Array.isArray(v) || v.length > 0)) ? systems : undefined,
       contact: Object.values(contact).some(v => v !== null) ? contact : undefined,
     };
-  }, [data, status]);
+  }, [data, status, manualInfo]);
 
   // Enrich with external location data
   const enrichWithLocationData = async (lat: number, lng: number) => {

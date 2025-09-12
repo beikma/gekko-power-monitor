@@ -5,7 +5,7 @@ import { useEnergyAI } from "@/hooks/useEnergyAI";
 import EnergyInsights from "@/components/EnergyInsights";
 import BuildingProfile from "@/components/BuildingProfile";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Zap, Home, Activity } from "lucide-react";
+import { RefreshCw, Zap, Home, Activity, Settings } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
 import { useEffect } from "react";
 
@@ -254,10 +254,19 @@ const Index = () => {
                 variant="outline"
                 size="sm"
                 disabled={isLoading}
-                className="border-primary/20 hover:bg-primary/5"
+                className="border-primary/20 hover:bg-primary/5 mr-2"
               >
                 <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
                 Refresh
+              </Button>
+              <Button
+                onClick={() => window.location.href = '/admin'}
+                variant="outline"
+                size="sm"
+                className="border-primary/20 hover:bg-primary/5"
+              >
+                <Settings className="h-4 w-4 mr-2" />
+                Admin
               </Button>
             </div>
           </div>
