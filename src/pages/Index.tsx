@@ -4,15 +4,18 @@ import { useGekkoApi } from "@/hooks/useGekkoApi";
 import { useEnergyAI } from "@/hooks/useEnergyAI";
 import EnergyInsights from "@/components/EnergyInsights";
 import BuildingProfile from "@/components/BuildingProfile";
+import SmartHomeDashboard from "@/components/SmartHomeDashboard";
 import { Button } from "@/components/ui/button";
-import { RefreshCw, Zap, Home, Activity, Settings } from "lucide-react";
+import { RefreshCw, Zap, Home, Activity, Settings, Grid3X3 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const Index = () => {
   const { data, status, isLoading, error, lastUpdate, refetch, connectionStatus } = useGekkoApi();
   const { storeEnergyReading } = useEnergyAI();
   const { toast } = useToast();
+  const [viewMode, setViewMode] = useState<'classic' | 'smart'>('smart');
 
   const handleRefresh = () => {
     refetch();
@@ -250,6 +253,15 @@ const Index = () => {
                 lastUpdate={lastUpdate} 
               />
               <Button
+                onClick={() => setViewMode(viewMode === 'classic' ? 'smart' : 'classic')}
+                variant="outline"
+                size="sm"
+                className="border-primary/20 hover:bg-primary/5"
+              >
+                <Grid3X3 className="h-4 w-4 mr-2" />
+                {viewMode === 'classic' ? 'Smart View' : 'Classic View'}
+              </Button>
+              <Button
                 onClick={handleRefresh}
                 variant="outline"
                 size="sm"
@@ -294,74 +306,115 @@ const Index = () => {
           </div>
         )}
 
-        {/* Energy Management Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-8">
-          <PowerCard
-            title="Current Power"
-            value={energyValues?.currentPower?.toFixed(2) || "0"}
-            unit="kW"
-            trend={energyValues?.currentPower > 10 ? "up" : energyValues?.currentPower > 5 ? "stable" : "down"}
-            trendValue={energyValues?.currentPower > 10 ? "High Usage" : energyValues?.currentPower > 5 ? "Normal" : "Low Usage"}
-            isLoading={isLoading}
-          />
-          
-          <PowerCard
-            title="Daily Energy"
-            value={energyValues?.dailyEnergy?.toFixed(1) || "0"}
-            unit="kWh"
-            trend={energyValues?.dailyEnergy > 50 ? "up" : "stable"}
-            trendValue={`€${energyValues?.dailyEnergy ? (energyValues.dailyEnergy * 0.25).toFixed(2) : "0.00"}`}
-            isLoading={isLoading}
-          />
-          
-          <PowerCard
-            title="PV Generation"
-            value={energyValues?.pvPower?.toFixed(2) || "0"}
-            unit="kW"
-            trend={energyValues?.pvPower > 8 ? "up" : energyValues?.pvPower > 3 ? "stable" : "down"}
-            trendValue={energyValues?.pvPower > 0 ? "Generating" : "No Sun"}
-            isLoading={isLoading}
-          />
-          
-          <PowerCard
-            title="Battery Level"
-            value={energyValues?.batteryLevel?.toString() || "0"}
-            unit="%"
-            trend={energyValues?.batteryLevel > 70 ? "up" : energyValues?.batteryLevel > 30 ? "stable" : "down"}
-            trendValue={`Grid: ${energyValues?.gridPower?.toFixed(1) || "0"} kW`}
-            isLoading={isLoading}
-          />
-          
-          <PowerCard
-            title="Building Temp"
-            value={energyValues?.temperature ? energyValues.temperature.toFixed(1) : "N/A"}
-            unit="°C"
-            trend={energyValues?.temperature && energyValues.temperature > 22 ? "up" : energyValues?.temperature && energyValues.temperature < 18 ? "down" : "stable"}
-            trendValue={energyValues?.humidity ? `${energyValues.humidity.toFixed(0)}% RH` : "N/A RH"}
-            isLoading={isLoading}
-          />
-          
-          <PowerCard
-            title="Monthly Est."
-            value={energyValues?.monthlyCost?.toFixed(0) || "0"}
-            unit="€"
-            trend={energyValues?.monthlyCost > 200 ? "up" : "stable"}
-            trendValue={`${energyValues?.efficiency?.toFixed(0) || "100"}% Eff.`}
-            isLoading={isLoading}
-          />
-        </div>
-
-        {/* AI Energy Insights and Building Profile */}
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 mb-8">
-          <div className="xl:col-span-2">
-            <EnergyInsights />
+        {viewMode === 'smart' ? (
+          <div className="space-y-6">
+            <SmartHomeDashboard 
+              data={data} 
+              status={status} 
+              isLoading={isLoading} 
+              connectionStatus={connectionStatus} 
+            />
+            
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2">
+                <EnergyInsights />
+              </div>
+              <div>
+                <BuildingProfile />
+              </div>
+            </div>
           </div>
-          <div>
-            <BuildingProfile />
+        ) : (
+          <div className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <PowerCard
+                title="Current Power"
+                value={energyValues?.currentPower?.toFixed(2) || "0"}
+                unit="kW"
+                trend={energyValues?.currentPower > 10 ? "up" : energyValues?.currentPower > 5 ? "stable" : "down"}
+                trendValue={energyValues?.currentPower > 10 ? "High Usage" : energyValues?.currentPower > 5 ? "Normal" : "Low Usage"}
+                isLoading={isLoading}
+              />
+            </div>
+            
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2">
+                <EnergyInsights />
+              </div>
+              <div>
+                <BuildingProfile />
+              </div>
+            </div>
           </div>
-        </div>
+        )}
+            {/* Energy Management Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              <PowerCard
+                title="Current Power"
+                value={energyValues?.currentPower?.toFixed(2) || "0"}
+                unit="kW"
+                trend={energyValues?.currentPower > 10 ? "up" : energyValues?.currentPower > 5 ? "stable" : "down"}
+                trendValue={energyValues?.currentPower > 10 ? "High Usage" : energyValues?.currentPower > 5 ? "Normal" : "Low Usage"}
+                isLoading={isLoading}
+              />
+              
+              <PowerCard
+                title="Daily Energy"
+                value={energyValues?.dailyEnergy?.toFixed(1) || "0"}
+                unit="kWh"
+                trend={energyValues?.dailyEnergy > 50 ? "up" : "stable"}
+                trendValue={`€${energyValues?.dailyEnergy ? (energyValues.dailyEnergy * 0.25).toFixed(2) : "0.00"}`}
+                isLoading={isLoading}
+              />
+              
+              <PowerCard
+                title="PV Generation"
+                value={energyValues?.pvPower?.toFixed(2) || "0"}
+                unit="kW"
+                trend={energyValues?.pvPower > 8 ? "up" : energyValues?.pvPower > 3 ? "stable" : "down"}
+                trendValue={energyValues?.pvPower > 0 ? "Generating" : "No Sun"}
+                isLoading={isLoading}
+              />
+              
+              <PowerCard
+                title="Battery Level"
+                value={energyValues?.batteryLevel?.toString() || "0"}
+                unit="%"
+                trend={energyValues?.batteryLevel > 70 ? "up" : energyValues?.batteryLevel > 30 ? "stable" : "down"}
+                trendValue={`Grid: ${energyValues?.gridPower?.toFixed(1) || "0"} kW`}
+                isLoading={isLoading}
+              />
+              
+              <PowerCard
+                title="Building Temp"
+                value={energyValues?.temperature ? energyValues.temperature.toFixed(1) : "N/A"}
+                unit="°C"
+                trend={energyValues?.temperature && energyValues.temperature > 22 ? "up" : energyValues?.temperature && energyValues.temperature < 18 ? "down" : "stable"}
+                trendValue={energyValues?.humidity ? `${energyValues.humidity.toFixed(0)}% RH` : "N/A RH"}
+                isLoading={isLoading}
+              />
+              
+              <PowerCard
+                title="Monthly Est."
+                value={energyValues?.monthlyCost?.toFixed(0) || "0"}
+                unit="€"
+                trend={energyValues?.monthlyCost > 200 ? "up" : "stable"}
+                trendValue={`${energyValues?.efficiency?.toFixed(0) || "100"}% Eff.`}
+                isLoading={isLoading}
+              />
+            </div>
 
-        {/* Building Management Insights */}
+            {/* AI Energy Insights and Building Profile */}
+            <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+              <div className="xl:col-span-2">
+                <EnergyInsights />
+              </div>
+              <div>
+                <BuildingProfile />
+              </div>
+            </div>
+
+            {/* Building Management Insights */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="bg-gradient-card border border-border rounded-lg p-6 shadow-card-custom">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
@@ -612,12 +665,11 @@ const Index = () => {
                   </div>
                 )}
               </div>
-            </div>
-          </div>
-        )}
       </main>
     </div>
   );
 };
+
+export default Index;
 
 export default Index;
