@@ -16,6 +16,7 @@ import {
 import { useNavigate } from "react-router-dom";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
 import { useEnergyReadings } from "@/hooks/useEnergyReadings";
+import { useRecentAlarms } from "@/hooks/useRecentAlarms";
 
 export function DashboardOverview() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export function DashboardOverview() {
     refreshInterval: 30000
   });
   const { latestReading } = useEnergyReadings();
+  const { alarms, activeAlarms, criticalAlarms } = useRecentAlarms(3);
 
   // Calculate quick stats
   const lights = data?.lights || {};
@@ -171,6 +173,70 @@ export function DashboardOverview() {
               </div>
             ))}
           </div>
+        </CardContent>
+      </Card>
+
+      {/* Recent Alarms */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <AlertTriangle className="h-5 w-5" />
+            Recent Alarms
+          </CardTitle>
+          <CardDescription>
+            Latest system alerts and notifications
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {alarms.length === 0 ? (
+            <div className="text-center py-6 text-muted-foreground">
+              <CheckCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+              <p className="text-sm">No recent alarms</p>
+              <p className="text-xs">All systems operating normally</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {alarms.map((alarm) => (
+                <div key={alarm.id} className="flex items-center gap-3 p-3 border rounded-lg">
+                  <div className="flex-shrink-0">
+                    {alarm.status === 'active' ? (
+                      <AlertTriangle className="h-4 w-4 text-red-500" />
+                    ) : (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{alarm.description}</p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge 
+                        variant={
+                          alarm.severity === 'critical' || alarm.severity === 'high' 
+                            ? 'destructive' 
+                            : alarm.severity === 'medium' 
+                            ? 'default' 
+                            : 'secondary'
+                        } 
+                        className="text-xs"
+                      >
+                        {alarm.severity}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(alarm.created_at).toLocaleTimeString()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              ))}
+              {activeAlarms.length > 0 && (
+                <div className="pt-2 border-t">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-muted-foreground">Active Alarms:</span>
+                    <Badge variant="destructive">{activeAlarms.length}</Badge>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

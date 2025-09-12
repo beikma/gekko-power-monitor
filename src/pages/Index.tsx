@@ -218,8 +218,21 @@ const Index = () => {
         efficiencyScore: energyValues.efficiency,
         costEstimate: energyValues.monthlyCost,
       });
+
+      // Process alarms from Gekko data
+      if (data || status) {
+        fetch('https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/process-gekko-alarms', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ status, data })
+        }).catch(error => {
+          console.error('Error processing alarms:', error);
+        });
+      }
     }
-  }, [energyValues, connectionStatus, storeEnergyReading]);
+  }, [energyValues, connectionStatus, storeEnergyReading, data, status]);
 
   return (
     <div className="min-h-screen bg-background">
