@@ -1,12 +1,16 @@
-import { PowerCard } from "@/components/PowerCard";
 import { StatusIndicator } from "@/components/StatusIndicator";
+import { PowerCard } from "@/components/PowerCard";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
+import { useEnergyAI } from "@/hooks/useEnergyAI";
+import EnergyInsights from "@/components/EnergyInsights";
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Zap, Home, Activity } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useEffect } from "react";
 
 const Index = () => {
   const { data, status, isLoading, error, lastUpdate, refetch, connectionStatus } = useGekkoApi();
+  const { storeEnergyReading } = useEnergyAI();
   const { toast } = useToast();
 
   const handleRefresh = () => {
@@ -188,8 +192,8 @@ const Index = () => {
       batteryLevel: batteryLevel,
       pvPower: pvPower,
       gridPower: gridPower,
-      temperature: weather.current.temperature,
-      humidity: weather.current.humidity,
+      temperature: weather?.current?.temperature,
+      humidity: weather?.current?.humidity,
       weather: weather,
       monthlyCost: estimatedMonthlyCost,
       efficiency: Math.min(powerEfficiency, 100),
@@ -202,6 +206,24 @@ const Index = () => {
   };
 
   const energyValues = getEnergyValues();
+
+  // Store energy reading when data changes
+  useEffect(() => {
+    if (energyValues && connectionStatus === 'connected') {
+      storeEnergyReading({
+        currentPower: energyValues.currentPower,
+        dailyEnergy: energyValues.dailyEnergy,
+        batteryLevel: energyValues.batteryLevel,
+        pvPower: energyValues.pvPower,
+        gridPower: energyValues.gridPower,
+        temperature: energyValues.temperature,
+        humidity: energyValues.humidity,
+        weather: energyValues.weather?.current?.condition,
+        efficiencyScore: energyValues.efficiency,
+        costEstimate: energyValues.monthlyCost,
+      });
+    }
+  }, [energyValues, connectionStatus, storeEnergyReading]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -308,6 +330,11 @@ const Index = () => {
             trendValue={`${energyValues?.efficiency?.toFixed(0) || "100"}% Eff.`}
             isLoading={isLoading}
           />
+        </div>
+
+        {/* AI Energy Insights */}
+        <div className="mb-8">
+          <EnergyInsights />
         </div>
 
         {/* Building Management Insights */}
