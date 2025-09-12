@@ -14,13 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      energy_insights: {
+        Row: {
+          category: string | null
+          confidence_score: number | null
+          created_at: string
+          description: string
+          expires_at: string | null
+          id: string
+          insight_type: string
+          is_active: boolean
+          metadata: Json | null
+          severity: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          description: string
+          expires_at?: string | null
+          id?: string
+          insight_type: string
+          is_active?: boolean
+          metadata?: Json | null
+          severity?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string | null
+          confidence_score?: number | null
+          created_at?: string
+          description?: string
+          expires_at?: string | null
+          id?: string
+          insight_type?: string
+          is_active?: boolean
+          metadata?: Json | null
+          severity?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      energy_readings: {
+        Row: {
+          battery_level: number | null
+          cost_estimate: number | null
+          created_at: string
+          current_power: number
+          daily_energy: number
+          efficiency_score: number | null
+          grid_power: number
+          humidity: number | null
+          id: string
+          pv_power: number
+          recorded_at: string
+          temperature: number | null
+          weather_condition: string | null
+        }
+        Insert: {
+          battery_level?: number | null
+          cost_estimate?: number | null
+          created_at?: string
+          current_power?: number
+          daily_energy?: number
+          efficiency_score?: number | null
+          grid_power?: number
+          humidity?: number | null
+          id?: string
+          pv_power?: number
+          recorded_at?: string
+          temperature?: number | null
+          weather_condition?: string | null
+        }
+        Update: {
+          battery_level?: number | null
+          cost_estimate?: number | null
+          created_at?: string
+          current_power?: number
+          daily_energy?: number
+          efficiency_score?: number | null
+          grid_power?: number
+          humidity?: number | null
+          id?: string
+          pv_power?: number
+          recorded_at?: string
+          temperature?: number | null
+          weather_condition?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      cleanup_expired_insights: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never
