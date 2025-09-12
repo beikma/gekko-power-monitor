@@ -4,6 +4,7 @@ import { useGekkoApi } from "@/hooks/useGekkoApi";
 import { useEnergyAI } from "@/hooks/useEnergyAI";
 import EnergyInsights from "@/components/EnergyInsights";
 import BuildingProfile from "@/components/BuildingProfile";
+import { BulkDataImport } from "@/components/BulkDataImport";
 import SmartHomeDashboard from '@/components/SmartHomeDashboard';
 import { CO2ImpactTracker } from '@/components/CO2ImpactTracker';
 import { PredictiveMaintenanceCard } from '@/components/PredictiveMaintenanceCard';
@@ -300,8 +301,11 @@ const Index = () => {
             </div>
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div className="xl:col-span-2">
+              <div>
                 <EnergyInsights />
+              </div>
+              <div>
+                <BulkDataImport />
               </div>
               <div>
                 <BuildingProfile />
@@ -369,8 +373,11 @@ const Index = () => {
 
             {/* AI Energy Insights and Building Profile */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
-              <div className="xl:col-span-2">
+              <div>
                 <EnergyInsights />
+              </div>
+              <div>
+                <BulkDataImport />
               </div>
               <div>
                 <BuildingProfile />

@@ -29,3 +29,9 @@ verify_jwt = false
 
 [functions.energy-ai-analysis-simple]
 verify_jwt = false
+
+[functions.energy-bulk-import]
+verify_jwt = false
+
+[functions.energy-ml-analysis]
+verify_jwt = false
