@@ -17,7 +17,7 @@ const Index = () => {
     });
   };
 
-  // Extract real energy values from myGEKKO API data
+  // Extract real energy values and alerts from myGEKKO API data
   const getEnergyValues = () => {
     if (!data) return null;
     
@@ -33,6 +33,67 @@ const Index = () => {
         }
       }
       return typeof value === 'number' ? value : (typeof value === 'string' ? parseFloat(value) : 0) || 0;
+    };
+
+    // Extract alerts and alarms from the API
+    const extractAlerts = () => {
+      const alerts = [];
+      
+      // Check for alarm state in various locations
+      if (data.alarm && typeof data.alarm === 'object') {
+        Object.entries(data.alarm).forEach(([key, alarm]: [string, any]) => {
+          if (alarm && typeof alarm === 'object' && alarm.sumstate) {
+            const state = alarm.sumstate.value;
+            if (state && state !== "3") { // 3 = Normal, anything else is an alert
+              alerts.push({
+                id: key,
+                type: 'alarm',
+                message: alarm.description || `System Alert: ${key}`,
+                severity: state === "1" ? 'critical' : state === "2" ? 'warning' : 'info',
+                timestamp: alarm.timestamp || new Date().toISOString()
+              });
+            }
+          }
+        });
+      }
+
+      // Check for temperature alerts in room control
+      if (data.globals && data.globals.raumregelung) {
+        Object.entries(data.globals.raumregelung).forEach(([room, config]: [string, any]) => {
+          if (config && typeof config === 'object') {
+            const temp = parseFloat(config.temperature?.value) || 0;
+            if (temp < 5 || temp > 30) {
+              alerts.push({
+                id: `temp_${room}`,
+                type: 'temperature',
+                message: `Room ${room}: Temperature ${temp}°C`,
+                severity: temp < 0 || temp > 35 ? 'critical' : 'warning',
+                timestamp: new Date().toISOString()
+              });
+            }
+          }
+        });
+      }
+
+      // Check for KNX/IO station alerts
+      if (data.globals && data.globals.network) {
+        Object.entries(data.globals.network).forEach(([station, config]: [string, any]) => {
+          if (config && typeof config === 'object' && station.includes('IOStation')) {
+            const status = config.status?.value || config.value;
+            if (status && status !== "OK" && status !== "3") {
+              alerts.push({
+                id: `network_${station}`,
+                type: 'network',
+                message: `${station}: ${status}`,
+                severity: 'warning',
+                timestamp: new Date().toISOString()
+              });
+            }
+          }
+        });
+      }
+
+      return alerts.slice(0, 5); // Limit to 5 most recent alerts
     };
 
     // Look for common energy parameter names in myGEKKO systems
@@ -56,6 +117,8 @@ const Index = () => {
     const estimatedMonthlyCost = dailyEnergy * 30 * 0.25; // Assuming €0.25/kWh
     const powerEfficiency = powerConsumption > 0 ? (dailyEnergy / 24) / powerConsumption * 100 : 100;
 
+    const alerts = extractAlerts();
+
     return {
       currentPower: powerConsumption,
       dailyEnergy: dailyEnergy,
@@ -63,8 +126,10 @@ const Index = () => {
       humidity: humidity,
       monthlyCost: estimatedMonthlyCost,
       efficiency: Math.min(powerEfficiency, 100),
+      alerts: alerts,
       // Status indicators
-      systemStatus: status?.alarm?.sumstate?.value === "3" ? 'normal' : 'alert',
+      systemStatus: alerts.some(a => a.severity === 'critical') ? 'alert' : 
+                   alerts.some(a => a.severity === 'warning') ? 'warning' : 'normal',
       connectionQuality: status?.globals?.network ? 'good' : 'poor'
     };
   };
@@ -239,30 +304,79 @@ const Index = () => {
           <div className="bg-gradient-card border border-border rounded-lg p-6 shadow-card-custom">
             <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
               <Activity className="h-5 w-5 text-primary" />
-              Quick Actions
+              System Alerts
             </h3>
             <div className="space-y-3">
               <div className="text-xs text-muted-foreground mb-2">
                 Last updated: {lastUpdate?.toLocaleString() || 'Never'}
               </div>
+              
+              {/* Active Alerts */}
+              {energyValues?.alerts && energyValues.alerts.length > 0 ? (
+                <div className="space-y-2 max-h-40 overflow-y-auto">
+                  {energyValues.alerts.map((alert, index) => (
+                    <div 
+                      key={alert.id || index}
+                      className={`p-3 rounded-lg border text-xs ${
+                        alert.severity === 'critical' ? 'bg-energy-danger/10 border-energy-danger/20 text-energy-danger' :
+                        alert.severity === 'warning' ? 'bg-energy-warning/10 border-energy-warning/20 text-energy-warning' :
+                        'bg-energy-success/10 border-energy-success/20 text-energy-success'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1">
+                          <div className="font-medium">
+                            {alert.severity === 'critical' ? '🚨' : alert.severity === 'warning' ? '⚠️' : 'ℹ️'} 
+                            {alert.type === 'temperature' ? ' Temperature Alert' :
+                             alert.type === 'network' ? ' Network Alert' : 
+                             alert.type === 'alarm' ? ' System Alarm' : ' Alert'}
+                          </div>
+                          <div className="mt-1 opacity-90">{alert.message}</div>
+                        </div>
+                        <div className="text-xs opacity-70 whitespace-nowrap">
+                          {new Date(alert.timestamp).toLocaleTimeString()}
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="p-3 bg-energy-success/10 border border-energy-success/20 rounded-lg text-xs text-energy-success">
+                  ✅ All systems operating normally
+                </div>
+              )}
+              
+              {/* Quick Status Indicators */}
+              <div className="border-t border-border pt-3 mt-3">
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">System:</span>
+                    <span className={`font-medium ${
+                      energyValues?.systemStatus === 'normal' ? 'text-energy-success' : 
+                      energyValues?.systemStatus === 'warning' ? 'text-energy-warning' : 'text-energy-danger'
+                    }`}>
+                      {energyValues?.systemStatus === 'normal' ? 'Normal' : 
+                       energyValues?.systemStatus === 'warning' ? 'Warning' : 'Alert'}
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Connection:</span>
+                    <span className={`font-medium ${connectionStatus === 'connected' ? 'text-energy-success' : 'text-energy-danger'}`}>
+                      {connectionStatus === 'connected' ? 'Online' : 'Offline'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Additional automatic alerts */}
               {energyValues?.currentPower > 10 && (
                 <div className="p-2 bg-energy-warning/10 border border-energy-warning/20 rounded text-xs">
-                  ⚠️ High power consumption detected
+                  ⚡ High power consumption: {energyValues.currentPower.toFixed(2)} kW
                 </div>
               )}
               {energyValues?.temperature > 25 && (
                 <div className="p-2 bg-energy-danger/10 border border-energy-danger/20 rounded text-xs">
-                  🌡️ High temperature - check HVAC
-                </div>
-              )}
-              {energyValues?.systemStatus === 'alert' && (
-                <div className="p-2 bg-energy-danger/10 border border-energy-danger/20 rounded text-xs">
-                  🚨 System alert - check status
-                </div>
-              )}
-              {(!energyValues?.currentPower || energyValues.currentPower < 1) && (
-                <div className="p-2 bg-energy-success/10 border border-energy-success/20 rounded text-xs">
-                  💡 Low energy usage - efficient operation
+                  🌡️ High temperature: {energyValues.temperature.toFixed(1)}°C
                 </div>
               )}
             </div>
