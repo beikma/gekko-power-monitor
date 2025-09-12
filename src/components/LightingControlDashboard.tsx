@@ -73,6 +73,7 @@ export default function LightingControlDashboard({ data, status }: LightingContr
   const handleMasterToggle = async (checked: boolean) => {
     if (isToggling) return;
     
+    console.log('Master toggle clicked:', checked, 'Current state:', allLightsOn);
     setIsToggling(true);
     
     try {
@@ -81,17 +82,20 @@ export default function LightingControlDashboard({ data, status }: LightingContr
         description: `${checked ? 'Turning all lights on' : 'Turning all lights off'}...`,
       });
 
+      console.log('Calling gekko-light-control function...');
       const { data: result, error } = await supabase.functions.invoke('gekko-light-control', {
         body: {
           action: 'toggle_all'
         }
       });
 
+      console.log('Function response:', { result, error });
+
       if (error) throw error;
 
       toast({
         title: "Success!",
-        description: `All lights ${result.result.action === 'all_on' ? 'turned on' : 'turned off'}. ${result.result.lightsAffected} lights affected via ${result.result.groupsControlled} groups.`,
+        description: `All lights ${result.result.action === 'all_on' ? 'turned on' : 'turned off'}. ${result.result.lightsAffected} lights affected.`,
       });
 
       console.log('Light control result:', result);
@@ -109,12 +113,15 @@ export default function LightingControlDashboard({ data, status }: LightingContr
   };
 
   const handleLightToggle = async (lightId: string, currentState: boolean) => {
+    console.log('Individual light toggle clicked:', lightId, 'Current state:', currentState);
+    
     try {
       toast({
         title: "Controlling Light",
-        description: `${currentState ? 'Turning off' : 'Turning on'} ${lightId}...`,
+        description: `${currentState ? 'Turning off' : 'Turning on'} light...`,
       });
 
+      console.log('Calling gekko-light-control function for individual light...');
       const { data: result, error } = await supabase.functions.invoke('gekko-light-control', {
         body: {
           action: 'toggle_light',
@@ -122,6 +129,8 @@ export default function LightingControlDashboard({ data, status }: LightingContr
           value: currentState ? '1' : '0' // Send current state, function will toggle it
         }
       });
+
+      console.log('Individual light response:', { result, error });
 
       if (error) throw error;
 
