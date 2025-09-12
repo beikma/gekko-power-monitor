@@ -18,7 +18,10 @@ import {
   Clock,
   BarChart3,
   Lightbulb,
-  Settings
+  Settings,
+  Sun,
+  Battery,
+  Shield
 } from 'lucide-react';
 import {
   LineChart,
@@ -222,6 +225,17 @@ export default function AdvancedAIDashboard() {
   const getInsightCards = (parsedInsights: any) => {
     const cards = [];
     
+    // Handle array format from fallback analysis
+    if (Array.isArray(parsedInsights)) {
+      return parsedInsights.map((insight: any) => ({
+        title: insight.title || 'Analysis Result',
+        content: formatInsightContent(insight.content || ''),
+        icon: getIconForType(insight.type || 'analysis'),
+        color: getColorForType(insight.type || 'analysis')
+      }));
+    }
+    
+    // Handle object format (existing logic)
     if (parsedInsights.executive_summary) {
       cards.push({
         title: 'Executive Summary',
@@ -278,7 +292,49 @@ export default function AdvancedAIDashboard() {
       });
     }
     
+    // Fallback for any remaining insights
+    if (cards.length === 0) {
+      Object.entries(parsedInsights).forEach(([key, value]) => {
+        if (typeof value === 'string' && value.trim()) {
+          cards.push({
+            title: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+            content: formatInsightContent(value),
+            icon: BarChart3,
+            color: 'border-gray-200'
+          });
+        }
+      });
+    }
+    
     return cards;
+  };
+
+  const getIconForType = (type: string) => {
+    switch (type) {
+      case 'efficiency': return Zap;
+      case 'cost': return DollarSign;
+      case 'solar': return Sun;
+      case 'battery': return Battery;
+      case 'optimization': return Lightbulb;
+      case 'forecast': return TrendingUp;
+      case 'health': return Shield;
+      case 'correlation': return BarChart3;
+      default: return BarChart3;
+    }
+  };
+
+  const getColorForType = (type: string) => {
+    switch (type) {
+      case 'efficiency': return 'border-green-200';
+      case 'cost': return 'border-blue-200';
+      case 'solar': return 'border-yellow-200';
+      case 'battery': return 'border-purple-200';
+      case 'optimization': return 'border-orange-200';
+      case 'forecast': return 'border-indigo-200';
+      case 'health': return 'border-emerald-200';
+      case 'correlation': return 'border-pink-200';
+      default: return 'border-gray-200';
+    }
   };
 
   const selectedAnalysisType = analysisTypes.find(a => a.id === selectedAnalysis);
