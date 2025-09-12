@@ -184,44 +184,31 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
       const commandIndex = schemaData.lights?.[lightId]?.scmd?.index;
       console.log(`Command index for ${lightId}: ${commandIndex}`);
       
-      // Test different command approaches for myGEKKO
+      // Try the exact same pattern as working API calls but with command execution
       const testFormats = [
         {
-          name: "POST to myGEKKO scmd",
-          url: `https://live.my-gekko.com/api/v1/var/scmd`,
-          method: 'POST',
-          body: JSON.stringify({
-            username: username,
-            key: key,
-            gekkoid: gekkoId,
-            index: commandIndex,
-            value: newState
-          })
-        },
-        {
-          name: "PUT to myGEKKO with index",
-          url: `https://live.my-gekko.com/api/v1/var/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
-          method: 'PUT'
-        },
-        {
-          name: "POST to item specific endpoint",
-          url: `https://live.my-gekko.com/api/v1/var/${lightId}/scmd`,
-          method: 'POST', 
-          body: JSON.stringify({
-            username: username,
-            key: key,
-            gekkoid: gekkoId,
-            value: newState
-          })
-        },
-        {
-          name: "direct myGEKKO GET scmd", 
-          url: `https://live.my-gekko.com/api/v1/var/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
+          name: "scmd endpoint execution",
+          url: `https://live.my-gekko.com/api/v1/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
           method: 'GET'
         },
         {
-          name: "myGEKKO item GET",
-          url: `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`,
+          name: "var endpoint with command",
+          url: `https://live.my-gekko.com/api/v1/var?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&cmd=${lightId}&value=${newState}`,
+          method: 'GET'
+        },
+        {
+          name: "item direct command",
+          url: `https://live.my-gekko.com/api/v1/${lightId}?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&cmd=scmd&value=${newState}`,
+          method: 'GET'
+        },
+        {
+          name: "lights command path",
+          url: `https://live.my-gekko.com/api/v1/lights/${lightId}?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`,
+          method: 'GET'
+        },
+        {
+          name: "command with index direct",
+          url: `https://live.my-gekko.com/api/v1/cmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
           method: 'GET'
         }
       ];
