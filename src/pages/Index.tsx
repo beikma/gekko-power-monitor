@@ -5,6 +5,7 @@ import { useEnergyAI } from "@/hooks/useEnergyAI";
 import EnergyInsights from "@/components/EnergyInsights";
 import BuildingProfile from "@/components/BuildingProfile";
 import { BulkDataImport } from "@/components/BulkDataImport";
+import { DirectApiImport } from "@/components/DirectApiImport";
 import { AdvancedMLDashboard } from "@/components/AdvancedMLDashboard";
 import SmartHomeDashboard from '@/components/SmartHomeDashboard';
 import { CO2ImpactTracker } from '@/components/CO2ImpactTracker';
@@ -305,10 +306,10 @@ const Index = () => {
               <div>
                 <EnergyInsights />
               </div>
-              <div>
-        <BulkDataImport />
-        
-        <AdvancedMLDashboard />
+              <div className="space-y-6">
+                <DirectApiImport />
+                <BulkDataImport />
+                <AdvancedMLDashboard />
               </div>
               <div>
                 <BuildingProfile />
@@ -379,7 +380,8 @@ const Index = () => {
               <div>
                 <EnergyInsights />
               </div>
-              <div>
+              <div className="space-y-6">
+                <DirectApiImport />
                 <BulkDataImport />
               </div>
               <div>
