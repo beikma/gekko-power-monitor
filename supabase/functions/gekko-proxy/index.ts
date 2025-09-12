@@ -42,14 +42,12 @@ serve(async (req) => {
       method: req.method,
     };
 
-    // Handle command requests (scmd endpoints)
-    if (endpoint.includes('/scmd') && req.method === 'POST' && value !== null) {
-      // For commands, add value to URL parameters
+    // Handle command requests (scmd endpoints) - myGEKKO uses GET for commands
+    if (endpoint.includes('/scmd') && value !== null) {
+      // For commands, add value to URL parameters and always use GET
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
-      requestOptions.headers = {
-        'Content-Type': 'application/json'
-      };
+      requestOptions.method = 'GET';  // Force GET for commands
     } else {
       // For regular GET requests
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;

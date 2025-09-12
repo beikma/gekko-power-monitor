@@ -109,7 +109,7 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
       
       lightCommands.push(
         fetch(commandUrl, { 
-          method: 'POST',
+          method: 'GET',  // Changed to GET
           headers: {
             'Content-Type': 'application/json'
           }
@@ -161,7 +161,7 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
     console.log(`Command URL: ${commandUrl}`);
     
     const response = await fetch(commandUrl, { 
-      method: 'POST',
+      method: 'GET',  // Changed to GET
       headers: {
         'Content-Type': 'application/json'
       }
@@ -196,7 +196,7 @@ async function setBrightness(username: string, key: string, gekkoId: string, lig
     console.log(`Command URL: ${commandUrl}`);
     
     const response = await fetch(commandUrl, { 
-      method: 'POST',
+      method: 'GET',  // Changed to GET
       headers: {
         'Content-Type': 'application/json'
       }
