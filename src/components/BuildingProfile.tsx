@@ -3,6 +3,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBuildingInfo } from "@/hooks/useBuildingInfo";
+import BuildingMap from "./BuildingMap";
+import BuildingImageUpload from "./BuildingImageUpload";
 
 export default function BuildingProfile() {
   const { buildingInfo, locationData, isLoadingLocation } = useBuildingInfo();
@@ -23,6 +25,21 @@ export default function BuildingProfile() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Building Image Upload */}
+        <BuildingImageUpload 
+          buildingId={buildingInfo.gekkoid}
+          onImageUploaded={(url) => console.log('Image uploaded:', url)}
+        />
+
+        {/* Building Map */}
+        {buildingInfo.location?.latitude && buildingInfo.location?.longitude && (
+          <BuildingMap
+            latitude={buildingInfo.location.latitude}
+            longitude={buildingInfo.location.longitude}
+            address={buildingInfo.location.address}
+          />
+        )}
+
         {/* Basic Information */}
         <div>
           <h4 className="font-medium text-energy-text mb-3 flex items-center gap-2">
