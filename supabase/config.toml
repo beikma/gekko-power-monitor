@@ -1,1 +1,25 @@
 project_id = "kayttwmmdcubfjqrpztw"
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[auth]
+enabled = true
+port = 54324
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["https://5ed76bfc-5970-43c6-beda-83a586a98566.sandbox.lovable.dev"]
+jwt_expiry = 3600
+
+[db]
+port = 54322
+
+[edge_functions]
+enabled = true
+port = 54323
+
+[functions.gekko-proxy]
+verify_jwt = false

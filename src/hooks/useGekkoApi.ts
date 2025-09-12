@@ -42,16 +42,18 @@ export function useGekkoApi(config: Partial<GekkoApiConfig> = {}): UseGekkoApiRe
     setConnectionStatus('loading');
     
     try {
-      const params = new URLSearchParams({
+      const baseParams = new URLSearchParams({
         username: finalConfig.username,
         key: finalConfig.key,
         gekkoid: finalConfig.gekkoid,
       });
 
-      // Fetch both data and status
+      // Use our Supabase Edge Function to proxy the requests
+      const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
+      
       const [dataResponse, statusResponse] = await Promise.all([
-        fetch(`https://live.my-gekko.com/api/v1/var?${params}`),
-        fetch(`https://live.my-gekko.com/api/v1/var/status?${params}`),
+        fetch(`${proxyUrl}?endpoint=var&${baseParams}`),
+        fetch(`${proxyUrl}?endpoint=var/status&${baseParams}`),
       ]);
 
       if (!dataResponse.ok || !statusResponse.ok) {
