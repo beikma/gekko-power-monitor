@@ -7,6 +7,7 @@ import BuildingProfile from "@/components/BuildingProfile";
 import { BulkDataImport } from "@/components/BulkDataImport";
 import { DirectApiImport } from "@/components/DirectApiImport";
 import { AdvancedMLDashboard } from "@/components/AdvancedMLDashboard";
+import AdvancedAIDashboard from "@/components/AdvancedAIDashboard";
 import SmartHomeDashboard from '@/components/SmartHomeDashboard';
 import { CO2ImpactTracker } from '@/components/CO2ImpactTracker';
 import { PredictiveMaintenanceCard } from '@/components/PredictiveMaintenanceCard';
@@ -310,6 +311,7 @@ const Index = () => {
                 <DirectApiImport />
                 <BulkDataImport />
                 <AdvancedMLDashboard />
+                <AdvancedAIDashboard />
               </div>
               <div>
                 <BuildingProfile />
