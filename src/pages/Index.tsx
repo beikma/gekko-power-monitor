@@ -5,6 +5,7 @@ import { useEnergyAI } from "@/hooks/useEnergyAI";
 import EnergyInsights from "@/components/EnergyInsights";
 import BuildingProfile from "@/components/BuildingProfile";
 import { BulkDataImport } from "@/components/BulkDataImport";
+import { AdvancedMLDashboard } from "@/components/AdvancedMLDashboard";
 import SmartHomeDashboard from '@/components/SmartHomeDashboard';
 import { CO2ImpactTracker } from '@/components/CO2ImpactTracker';
 import { PredictiveMaintenanceCard } from '@/components/PredictiveMaintenanceCard';
@@ -305,7 +306,9 @@ const Index = () => {
                 <EnergyInsights />
               </div>
               <div>
-                <BulkDataImport />
+        <BulkDataImport />
+        
+        <AdvancedMLDashboard />
               </div>
               <div>
                 <BuildingProfile />

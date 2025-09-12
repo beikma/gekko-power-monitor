@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.energy-ml-analysis]
 verify_jwt = false
+
+[functions.gekko-multi-import]
+verify_jwt = false

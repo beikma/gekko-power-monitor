@@ -95,6 +95,48 @@ export type Database = {
         }
         Relationships: []
       }
+      energy_costs: {
+        Row: {
+          cost_value: number
+          created_at: string
+          currency: string | null
+          date_recorded: string
+          energy_value: number
+          id: string
+          item_id: string
+          item_name: string
+          list_type: string
+          meter_reading: number
+          updated_at: string
+        }
+        Insert: {
+          cost_value?: number
+          created_at?: string
+          currency?: string | null
+          date_recorded: string
+          energy_value?: number
+          id?: string
+          item_id: string
+          item_name: string
+          list_type: string
+          meter_reading?: number
+          updated_at?: string
+        }
+        Update: {
+          cost_value?: number
+          created_at?: string
+          currency?: string | null
+          date_recorded?: string
+          energy_value?: number
+          id?: string
+          item_id?: string
+          item_name?: string
+          list_type?: string
+          meter_reading?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       energy_insights: {
         Row: {
           category: string | null
@@ -185,6 +227,84 @@ export type Database = {
           recorded_at?: string
           temperature?: number | null
           weather_condition?: string | null
+        }
+        Relationships: []
+      }
+      system_alarms: {
+        Row: {
+          alarm_type: string
+          created_at: string
+          description: string
+          end_time: string | null
+          id: string
+          metadata: Json | null
+          severity: string
+          source_system: string
+          start_time: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          alarm_type: string
+          created_at?: string
+          description: string
+          end_time?: string | null
+          id?: string
+          metadata?: Json | null
+          severity?: string
+          source_system?: string
+          start_time: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          alarm_type?: string
+          created_at?: string
+          description?: string
+          end_time?: string | null
+          id?: string
+          metadata?: Json | null
+          severity?: string
+          source_system?: string
+          start_time?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      weather_data: {
+        Row: {
+          created_at: string
+          humidity: number | null
+          id: string
+          pressure: number | null
+          recorded_at: string
+          source_system: string
+          temperature: number | null
+          weather_condition: string | null
+          wind_speed: number | null
+        }
+        Insert: {
+          created_at?: string
+          humidity?: number | null
+          id?: string
+          pressure?: number | null
+          recorded_at: string
+          source_system?: string
+          temperature?: number | null
+          weather_condition?: string | null
+          wind_speed?: number | null
+        }
+        Update: {
+          created_at?: string
+          humidity?: number | null
+          id?: string
+          pressure?: number | null
+          recorded_at?: string
+          source_system?: string
+          temperature?: number | null
+          weather_condition?: string | null
+          wind_speed?: number | null
         }
         Relationships: []
       }
