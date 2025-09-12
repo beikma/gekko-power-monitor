@@ -37,29 +37,55 @@ const Index = () => {
 
     // Extract comprehensive weather data
     const extractWeather = () => {
+      console.log('Full API data for weather extraction:', data);
+      console.log('Status data for weather:', status);
+      
       const weather = {
         current: {
           temperature: extractValue('meteo.temperature.value') || 
                       extractValue('weather.temperature') ||
+                      extractValue('globals.meteo.temperature.value') ||
                       (status?.meteo?.temperature?.value ? parseFloat(status.meteo.temperature.value) : null),
           humidity: extractValue('meteo.humidity.value') || 
                    extractValue('weather.humidity') ||
+                   extractValue('globals.meteo.humidity.value') ||
                    (status?.meteo?.humidity?.value ? parseFloat(status.meteo.humidity.value) : null),
           pressure: extractValue('meteo.pressure.value') || 
-                   extractValue('weather.pressure') || null,
+                   extractValue('weather.pressure') ||
+                   extractValue('globals.meteo.pressure.value') || null,
           windSpeed: extractValue('meteo.wind.speed.value') || 
-                    extractValue('weather.wind.speed') || null,
+                    extractValue('weather.wind.speed') ||
+                    extractValue('meteo.windspeed.value') ||
+                    extractValue('globals.meteo.wind.value') || null,
           windDirection: extractValue('meteo.wind.direction.value') || 
-                        extractValue('weather.wind.direction') || null,
+                        extractValue('weather.wind.direction') ||
+                        extractValue('meteo.winddirection.value') || null,
           uvIndex: extractValue('meteo.uv.value') || 
-                  extractValue('weather.uv') || null,
+                  extractValue('weather.uv') ||
+                  extractValue('meteo.uvindex.value') || null,
           visibility: extractValue('meteo.visibility.value') || 
-                     extractValue('weather.visibility') || null,
+                     extractValue('weather.visibility') ||
+                     extractValue('meteo.sicht.value') || null,
           condition: data.meteo?.condition?.value || 
-                    data.weather?.condition || 'Unknown'
+                    data.weather?.condition || 
+                    data.globals?.meteo?.condition?.value || 'Unknown'
         },
         forecast: []
       };
+
+      console.log('Extracted weather current:', weather.current);
+
+      // Check multiple possible locations for weather data
+      const possibleWeatherPaths = [
+        data.meteo,
+        data.weather,
+        data.globals?.meteo,
+        data.globals?.weather,
+        status?.meteo,
+        status?.weather
+      ];
+
+      console.log('Possible weather paths:', possibleWeatherPaths);
 
       // Extract forecast data if available
       if (data.meteo && data.meteo.forecast) {
@@ -78,6 +104,29 @@ const Index = () => {
         });
       }
 
+      // Also check for weather in globals
+      if (data.globals && data.globals.meteo) {
+        console.log('Found weather in globals.meteo:', data.globals.meteo);
+        // Try to extract from globals structure
+        Object.entries(data.globals.meteo).forEach(([key, value]: [string, any]) => {
+          if (value && typeof value === 'object' && value.value !== undefined) {
+            const numValue = parseFloat(value.value);
+            if (!isNaN(numValue)) {
+              if (key.toLowerCase().includes('temp')) {
+                weather.current.temperature = weather.current.temperature || numValue;
+              } else if (key.toLowerCase().includes('humid') || key.toLowerCase().includes('feuch')) {
+                weather.current.humidity = weather.current.humidity || numValue;
+              } else if (key.toLowerCase().includes('wind')) {
+                weather.current.windSpeed = weather.current.windSpeed || numValue;
+              } else if (key.toLowerCase().includes('pressure') || key.toLowerCase().includes('druck')) {
+                weather.current.pressure = weather.current.pressure || numValue;
+              }
+            }
+          }
+        });
+      }
+
+      console.log('Final extracted weather:', weather);
       return weather;
     };
 
