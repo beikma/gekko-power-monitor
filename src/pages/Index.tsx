@@ -48,15 +48,20 @@ const Index = () => {
         const energyString = status.energymanager.item0.sumstate.value;
         console.log("Energy management string:", energyString);
         
-        // Parse the semicolon-separated values: "16.10;71.3;51;2.5;11.00;..."
+        // Parse the semicolon-separated values based on actual data structure
         const values = energyString.split(';').map((v: string) => parseFloat(v) || 0);
         
-        if (values.length >= 5) {
-          currentPower = values[0]; // Current power consumption (16.10 kW)
-          dailyEnergy = values[1]; // Daily energy (71.3 kWh)
-          batteryLevel = values[2]; // Battery level (51%)
-          gridPower = values[3]; // Power from grid (2.5 kW)
-          pvPower = values[4]; // PV power generation (11.00 kW)
+        if (values.length >= 21) {
+          // Based on console logs analysis:
+          // Position 9: 16100.00 = 16.1 kW current power
+          // Position 20: 51 = 51% battery level  
+          // Position 10: 11000.00 = 11.0 kW PV power
+          // Position 14: daily energy values
+          currentPower = values[9] / 1000; // Convert from W to kW (16100.00 -> 16.1)
+          dailyEnergy = values[14] / 1000; // Convert from Wh to kWh 
+          batteryLevel = values[20]; // Battery level in %
+          pvPower = values[10] / 1000; // Convert from W to kW (11000.00 -> 11.0)
+          gridPower = values[6] / 1000; // Convert from W to kW
           
           console.log("Extracted energy data:", {
             currentPower,
@@ -73,22 +78,28 @@ const Index = () => {
 
     // Extract comprehensive weather data
     const extractWeather = () => {
-      const weather = {
-        current: {
-          temperature: status?.globals?.meteo?.current_temp || null,
-          humidity: status?.globals?.meteo?.current_hum || null,
-          pressure: status?.globals?.meteo?.current_press || null,
-          windSpeed: status?.globals?.meteo?.current_wind || null,
-          windDirection: status?.globals?.meteo?.current_winddir || null,
-          uvIndex: status?.globals?.meteo?.current_uv || null,
-          visibility: status?.globals?.meteo?.current_vis || null,
-          condition: status?.globals?.meteo?.current_cond || 'Clear'
-        },
-        forecast: []
-      };
-
-      // Extract forecast data if available
-      return weather;
+      try {
+        if (status?.globals?.meteo) {
+          const meteo = status.globals.meteo;
+          
+          return {
+            current: {
+              temperature: meteo.current_temp || null,
+              humidity: meteo.current_hum || null,
+              pressure: meteo.current_press || null,
+              windSpeed: meteo.current_wind || null,
+              windDirection: meteo.current_winddir || null,
+              uvIndex: meteo.current_uv || null,
+              visibility: meteo.current_vis || null,
+              condition: meteo.current_cond || 'Clear'
+            },
+            forecast: []
+          };
+        }
+      } catch (error) {
+        console.error("Weather extraction error:", error);
+      }
+      return null;
     };
 
     // Extract alerts and alarms from the API
@@ -248,8 +259,8 @@ const Index = () => {
             title="Current Power"
             value={energyValues?.currentPower?.toFixed(2) || "0"}
             unit="kW"
-            trend={energyValues?.currentPower > 5 ? "up" : energyValues?.currentPower > 2 ? "stable" : "down"}
-            trendValue={energyValues?.currentPower > 5 ? "High Usage" : energyValues?.currentPower > 2 ? "Normal" : "Low Usage"}
+            trend={energyValues?.currentPower > 10 ? "up" : energyValues?.currentPower > 5 ? "stable" : "down"}
+            trendValue={energyValues?.currentPower > 10 ? "High Usage" : energyValues?.currentPower > 5 ? "Normal" : "Low Usage"}
             isLoading={isLoading}
           />
           
@@ -259,6 +270,24 @@ const Index = () => {
             unit="kWh"
             trend={energyValues?.dailyEnergy > 50 ? "up" : "stable"}
             trendValue={`€${energyValues?.dailyEnergy ? (energyValues.dailyEnergy * 0.25).toFixed(2) : "0.00"}`}
+            isLoading={isLoading}
+          />
+          
+          <PowerCard
+            title="PV Generation"
+            value={energyValues?.pvPower?.toFixed(2) || "0"}
+            unit="kW"
+            trend={energyValues?.pvPower > 8 ? "up" : energyValues?.pvPower > 3 ? "stable" : "down"}
+            trendValue={energyValues?.pvPower > 0 ? "Generating" : "No Sun"}
+            isLoading={isLoading}
+          />
+          
+          <PowerCard
+            title="Battery Level"
+            value={energyValues?.batteryLevel?.toString() || "0"}
+            unit="%"
+            trend={energyValues?.batteryLevel > 70 ? "up" : energyValues?.batteryLevel > 30 ? "stable" : "down"}
+            trendValue={`Grid: ${energyValues?.gridPower?.toFixed(1) || "0"} kW`}
             isLoading={isLoading}
           />
           
