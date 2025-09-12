@@ -73,16 +73,18 @@ export default function LightingControlDashboard({ data, status }: LightingContr
   const handleMasterToggle = async (checked: boolean) => {
     if (isToggling) return;
     
-    console.log('Master toggle clicked:', checked, 'Current state:', allLightsOn);
+    console.log('Master toggle clicked - desired state:', checked, 'current allLightsOn:', allLightsOn);
     setIsToggling(true);
     
     try {
       toast({
-        title: "Controlling Lights",
+        title: "Controlling Lights", 
         description: `${checked ? 'Turning all lights on' : 'Turning all lights off'}...`,
       });
 
-      console.log('Calling gekko-light-control function...');
+      console.log('About to call gekko-light-control function with toggle_all action...');
+      
+      // Call the function
       const { data: result, error } = await supabase.functions.invoke('gekko-light-control', {
         body: {
           action: 'toggle_all'
@@ -311,7 +313,10 @@ export default function LightingControlDashboard({ data, status }: LightingContr
                    </div>
                    <Switch
                      checked={light.isOn}
-                     onCheckedChange={() => handleLightToggle(light.id, light.isOn)}
+                     onCheckedChange={(checked) => {
+                       console.log(`Switch toggled for ${light.name} (${light.id}): currently ${light.isOn}, new state requested: ${checked}`);
+                       handleLightToggle(light.id, light.isOn);
+                     }}
                      disabled={isToggling}
                    />
                  </div>
