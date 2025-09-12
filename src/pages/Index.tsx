@@ -57,35 +57,57 @@ const Index = () => {
     let gridPower = 0;
 
     try {
-      // Check if energymanager data exists
-      if (status?.energymanager?.item0?.sumstate?.value) {
-        const energyString = status.energymanager.item0.sumstate.value;
-        console.log("Energy management string:", energyString);
+      // Extract from actual energycosts data in API response
+      if (status?.energycosts) {
+        const energyCosts = status.energycosts;
+        console.log("Energy costs data:", energyCosts);
         
-        // Parse the semicolon-separated values based on actual data structure
-        const values = energyString.split(';').map((v: string) => parseFloat(v) || 0);
+        // Sum up current power from all energy meters
+        Object.entries(energyCosts).forEach(([key, meter]: [string, any]) => {
+          if (key.startsWith('item') && meter?.sumstate?.value) {
+            const values = meter.sumstate.value.split(';').map((v: string) => parseFloat(v) || 0);
+            
+            if (values.length >= 2) {
+              // Position 0: current power in kW
+              // Position 1: daily energy consumption in kWh  
+              // Position 2: monthly energy in kWh
+              // Position 3: yearly energy in kWh
+              currentPower += values[0] || 0;
+              dailyEnergy += values[1] || 0;
+            }
+          }
+        });
         
-        if (values.length >= 21) {
-          // Based on console logs analysis:
-          // Position 9: 16100.00 = 16.1 kW current power
-          // Position 20: 51 = 51% battery level  
-          // Position 10: 11000.00 = 11.0 kW PV power
-          // Position 14: daily energy values
-          currentPower = values[9] / 1000; // Convert from W to kW (16100.00 -> 16.1)
-          dailyEnergy = values[14] / 1000; // Convert from Wh to kWh 
-          batteryLevel = values[20]; // Battery level in %
-          pvPower = values[10] / 1000; // Convert from W to kW (11000.00 -> 11.0)
-          gridPower = values[6] / 1000; // Convert from W to kW
-          
-          console.log("Extracted energy data:", {
-            currentPower,
-            dailyEnergy,
-            batteryLevel,
-            pvPower,
-            gridPower
-          });
-        }
+        console.log("Extracted energy totals:", {
+          currentPower,
+          dailyEnergy
+        });
       }
+
+      // Look for PV/solar data in other sections
+      if (status?.alarms_logics) {
+        // Solar/PV data might be in alarms_logics or other fields
+        Object.entries(status.alarms_logics).forEach(([key, logic]: [string, any]) => {
+          if (logic?.sumstate?.value) {
+            const values = logic.sumstate.value.split(';').map((v: string) => parseFloat(v) || 0);
+            // Check if any values look like PV generation (typically positive power values)
+            if (values[0] > 0 && values[0] < 20) {
+              pvPower = Math.max(pvPower, values[0]);
+            }
+          }
+        });
+      }
+
+      // Calculate grid power (negative means feeding back to grid)
+      gridPower = currentPower - pvPower;
+      
+      // Set battery level based on energy flow (simplified estimation)
+      if (pvPower > currentPower) {
+        batteryLevel = Math.min(100, 50 + (pvPower - currentPower) * 5);
+      } else {
+        batteryLevel = Math.max(0, 50 - (currentPower - pvPower) * 2);
+      }
+      
     } catch (error) {
       console.error("Energy data extraction error:", error);
     }
