@@ -27,6 +27,7 @@ export type Database = {
           floors: number | null
           heating_system: string | null
           id: string
+          image_url: string | null
           latitude: number | null
           longitude: number | null
           notes: string | null
@@ -52,6 +53,7 @@ export type Database = {
           floors?: number | null
           heating_system?: string | null
           id?: string
+          image_url?: string | null
           latitude?: number | null
           longitude?: number | null
           notes?: string | null
@@ -77,6 +79,7 @@ export type Database = {
           floors?: number | null
           heating_system?: string | null
           id?: string
+          image_url?: string | null
           latitude?: number | null
           longitude?: number | null
           notes?: string | null

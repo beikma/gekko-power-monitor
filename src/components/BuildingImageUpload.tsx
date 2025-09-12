@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Upload, Image as ImageIcon, X, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
@@ -12,7 +12,38 @@ interface BuildingImageUploadProps {
 export default function BuildingImageUpload({ buildingId, onImageUploaded }: BuildingImageUploadProps) {
   const [uploading, setUploading] = useState(false);
   const [imageUrl, setImageUrl] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load existing image when component mounts
+  useEffect(() => {
+    const loadExistingImage = async () => {
+      if (!buildingId) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('building_info')
+          .select('image_url')
+          .eq('id', buildingId)
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error loading building image:', error);
+          return;
+        }
+
+        if (data?.image_url) {
+          setImageUrl(data.image_url);
+        }
+      } catch (error) {
+        console.error('Error loading building image:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadExistingImage();
+  }, [buildingId]);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -55,6 +86,16 @@ export default function BuildingImageUpload({ buildingId, onImageUploaded }: Bui
         .from('building-images')
         .getPublicUrl(data.path);
 
+      // Save the image URL to the database
+      const { error: dbError } = await supabase
+        .from('building_info')
+        .update({ image_url: publicUrl })
+        .eq('id', buildingId);
+
+      if (dbError) {
+        throw dbError;
+      }
+
       setImageUrl(publicUrl);
       onImageUploaded?.(publicUrl);
       toast.success('Building image uploaded successfully!');
@@ -85,6 +126,16 @@ export default function BuildingImageUpload({ buildingId, onImageUploaded }: Bui
         throw error;
       }
 
+      // Remove the image URL from the database
+      const { error: dbError } = await supabase
+        .from('building_info')
+        .update({ image_url: null })
+        .eq('id', buildingId);
+
+      if (dbError) {
+        throw dbError;
+      }
+
       setImageUrl(null);
       toast.success('Image removed successfully');
 
@@ -103,7 +154,14 @@ export default function BuildingImageUpload({ buildingId, onImageUploaded }: Bui
         </div>
       </div>
 
-      {imageUrl ? (
+      {loading ? (
+        <div className="border-2 border-dashed border-energy-border rounded-lg p-6 text-center">
+          <div className="mx-auto w-12 h-12 bg-energy-surface rounded-full flex items-center justify-center">
+            <Loader2 className="h-6 w-6 text-energy-primary animate-spin" />
+          </div>
+          <p className="text-sm text-muted-foreground mt-3">Loading image...</p>
+        </div>
+      ) : imageUrl ? (
         <div className="relative">
           <img
             src={imageUrl}

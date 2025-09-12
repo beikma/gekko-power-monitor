@@ -3,11 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useBuildingInfo } from "@/hooks/useBuildingInfo";
+import { useBuildingData } from "@/hooks/useBuildingData";
 import BuildingMap from "./BuildingMap";
 import BuildingImageUpload from "./BuildingImageUpload";
 
 export default function BuildingProfile() {
   const { buildingInfo, locationData, isLoadingLocation } = useBuildingInfo();
+  const { manualInfo } = useBuildingData();
 
   const handleOpenInMaps = () => {
     if (buildingInfo.location?.latitude && buildingInfo.location?.longitude) {
@@ -25,11 +27,13 @@ export default function BuildingProfile() {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Building Image Upload */}
-        <BuildingImageUpload 
-          buildingId={buildingInfo.gekkoid}
-          onImageUploaded={(url) => console.log('Image uploaded:', url)}
-        />
+        {/* Building Image Upload - only show if we have a database building ID */}
+        {manualInfo?.id && (
+          <BuildingImageUpload 
+            buildingId={manualInfo.id}
+            onImageUploaded={(url) => console.log('Image uploaded:', url)}
+          />
+        )}
 
         {/* Building Map */}
         {buildingInfo.location?.latitude && buildingInfo.location?.longitude && (
