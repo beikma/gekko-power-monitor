@@ -31,8 +31,8 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
       const g = (colorValue >> 8) & 0xFF;
       const b = colorValue & 0xFF;
       
-      // Extract real name from GEKKO data structure
-      const realName = light.name || light.itemname || light.title || light.label || `Light ${key.replace('item', '')}`;
+      // Use the real name from the GEKKO API response
+      const realName = light.name || `Light ${key.replace('item', '')}`;
       
       return {
         id: key,
@@ -50,7 +50,8 @@ export default function LightingControlDashboard({ data }: LightingControlDashbo
   const groups = Object.entries(lights)
     .filter(([key]) => key.startsWith('group'))
     .map(([key, group]: [string, any]) => {
-      const realName = group.name || group.itemname || group.title || group.label || `Zone ${key.replace('group', '')}`;
+      // Groups don't have names in the API, so we'll use generic names
+      const realName = `Zone ${key.replace('group', '')}`;
       return {
         id: key,
         name: realName,
