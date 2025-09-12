@@ -4,7 +4,10 @@ import { useGekkoApi } from "@/hooks/useGekkoApi";
 import { useEnergyAI } from "@/hooks/useEnergyAI";
 import EnergyInsights from "@/components/EnergyInsights";
 import BuildingProfile from "@/components/BuildingProfile";
-import SmartHomeDashboard from "@/components/SmartHomeDashboard";
+import SmartHomeDashboard from '@/components/SmartHomeDashboard';
+import { CO2ImpactTracker } from '@/components/CO2ImpactTracker';
+import { PredictiveMaintenanceCard } from '@/components/PredictiveMaintenanceCard';
+import { EnergyPredictionChart } from '@/components/EnergyPredictionChart';
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Zap, Home, Activity, Settings, Grid3X3 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -271,12 +274,30 @@ const Index = () => {
 
         {viewMode === 'smart' ? (
           <div className="space-y-6">
-            <SmartHomeDashboard 
-              data={data} 
-              status={status} 
-              isLoading={isLoading} 
-              connectionStatus={connectionStatus} 
-            />
+            {/* CO2 Impact Tracker - Prominent Position */}
+            <div className="mb-8">
+              <CO2ImpactTracker data={data} />
+            </div>
+
+            {/* AI Predictions and Maintenance */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+              <div className="lg:col-span-2">
+                <EnergyPredictionChart data={data} />
+              </div>
+              <div>
+                <PredictiveMaintenanceCard data={data} />
+              </div>
+            </div>
+
+            {/* Smart Home Dashboard */}
+            <div className="mb-8">
+              <SmartHomeDashboard 
+                data={data} 
+                status={status} 
+                isLoading={isLoading} 
+                connectionStatus={connectionStatus} 
+              />
+            </div>
             
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div className="xl:col-span-2">
