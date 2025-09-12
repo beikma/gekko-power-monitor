@@ -249,10 +249,10 @@ const Index = () => {
           
           <PowerCard
             title="Building Temp"
-            value={energyValues?.temperature?.toFixed(1) || "20"}
+            value={energyValues?.temperature ? energyValues.temperature.toFixed(1) : "N/A"}
             unit="°C"
-            trend={energyValues?.temperature > 22 ? "up" : energyValues?.temperature < 18 ? "down" : "stable"}
-            trendValue={`${energyValues?.humidity?.toFixed(0) || "50"}% RH`}
+            trend={energyValues?.temperature && energyValues.temperature > 22 ? "up" : energyValues?.temperature && energyValues.temperature < 18 ? "down" : "stable"}
+            trendValue={energyValues?.humidity ? `${energyValues.humidity.toFixed(0)}% RH` : "N/A RH"}
             isLoading={isLoading}
           />
           
@@ -320,11 +320,11 @@ const Index = () => {
               <div className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Temperature:</span>
-                  <span className="font-medium">{energyValues?.temperature.toFixed(1) || "N/A"}°C</span>
+                  <span className="font-medium">{energyValues?.temperature ? energyValues.temperature.toFixed(1) : "N/A"}°C</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Humidity:</span>
-                  <span className="font-medium">{energyValues?.humidity.toFixed(0) || "N/A"}%</span>
+                  <span className="font-medium">{energyValues?.humidity ? energyValues.humidity.toFixed(0) : "N/A"}%</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">System Status:</span>
@@ -419,7 +419,7 @@ const Index = () => {
                   ⚡ High power consumption: {energyValues.currentPower.toFixed(2)} kW
                 </div>
               )}
-              {energyValues?.temperature > 25 && (
+              {energyValues?.temperature && energyValues.temperature > 25 && (
                 <div className="p-2 bg-energy-danger/10 border border-energy-danger/20 rounded text-xs">
                   🌡️ High temperature: {energyValues.temperature.toFixed(1)}°C
                 </div>
@@ -441,20 +441,20 @@ const Index = () => {
                   <div key={day.day || index} className="text-center p-3 bg-background/30 rounded-lg">
                     <div className="text-sm font-medium mb-2">Day {index + 1}</div>
                     <div className="space-y-1 text-xs">
-                      {day.tempMax && day.tempMin && (
+                      {day.tempMax !== null && day.tempMin !== null && (
                         <div>
                           <span className="text-energy-danger">{day.tempMax.toFixed(0)}°</span>
                           <span className="text-muted-foreground mx-1">/</span>
                           <span className="text-primary">{day.tempMin.toFixed(0)}°</span>
                         </div>
                       )}
-                      {day.humidity && (
+                      {day.humidity !== null && (
                         <div className="text-muted-foreground">{day.humidity.toFixed(0)}% RH</div>
                       )}
-                      {day.windSpeed && (
+                      {day.windSpeed !== null && (
                         <div className="text-muted-foreground">{day.windSpeed.toFixed(1)} m/s</div>
                       )}
-                      {day.rain && day.rain > 0 && (
+                      {day.rain !== null && day.rain > 0 && (
                         <div className="text-primary">💧 {day.rain.toFixed(1)}mm</div>
                       )}
                     </div>
@@ -474,42 +474,42 @@ const Index = () => {
                 Current Weather Conditions
               </h3>
               <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-                {energyValues.weather.current.temperature && (
+                {energyValues.weather.current.temperature !== null && (
                   <div className="text-center p-3 bg-background/30 rounded-lg">
                     <div className="text-2xl mb-1">🌡️</div>
                     <div className="text-sm font-medium">Temperature</div>
                     <div className="text-lg font-bold text-primary">{energyValues.weather.current.temperature.toFixed(1)}°C</div>
                   </div>
                 )}
-                {energyValues.weather.current.humidity && (
+                {energyValues.weather.current.humidity !== null && (
                   <div className="text-center p-3 bg-background/30 rounded-lg">
                     <div className="text-2xl mb-1">💧</div>
                     <div className="text-sm font-medium">Humidity</div>
                     <div className="text-lg font-bold text-accent">{energyValues.weather.current.humidity.toFixed(0)}%</div>
                   </div>
                 )}
-                {energyValues.weather.current.windSpeed && (
+                {energyValues.weather.current.windSpeed !== null && (
                   <div className="text-center p-3 bg-background/30 rounded-lg">
                     <div className="text-2xl mb-1">💨</div>
                     <div className="text-sm font-medium">Wind Speed</div>
                     <div className="text-lg font-bold text-energy-success">{energyValues.weather.current.windSpeed.toFixed(1)} m/s</div>
                   </div>
                 )}
-                {energyValues.weather.current.pressure && (
+                {energyValues.weather.current.pressure !== null && (
                   <div className="text-center p-3 bg-background/30 rounded-lg">
                     <div className="text-2xl mb-1">🌀</div>
                     <div className="text-sm font-medium">Pressure</div>
                     <div className="text-lg font-bold text-muted-foreground">{energyValues.weather.current.pressure.toFixed(0)} hPa</div>
                   </div>
                 )}
-                {energyValues.weather.current.uvIndex && (
+                {energyValues.weather.current.uvIndex !== null && (
                   <div className="text-center p-3 bg-background/30 rounded-lg">
                     <div className="text-2xl mb-1">☀️</div>
                     <div className="text-sm font-medium">UV Index</div>
                     <div className="text-lg font-bold text-energy-warning">{energyValues.weather.current.uvIndex.toFixed(0)}</div>
                   </div>
                 )}
-                {energyValues.weather.current.visibility && (
+                {energyValues.weather.current.visibility !== null && (
                   <div className="text-center p-3 bg-background/30 rounded-lg">
                     <div className="text-2xl mb-1">👁️</div>
                     <div className="text-sm font-medium">Visibility</div>
