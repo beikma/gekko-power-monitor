@@ -17,7 +17,7 @@ const Index = () => {
     });
   };
 
-  // Extract real energy values and alerts from myGEKKO API data
+  // Extract real energy values, alerts, and weather data from myGEKKO API data
   const getEnergyValues = () => {
     if (!data) return null;
     
@@ -33,6 +33,52 @@ const Index = () => {
         }
       }
       return typeof value === 'number' ? value : (typeof value === 'string' ? parseFloat(value) : 0) || 0;
+    };
+
+    // Extract comprehensive weather data
+    const extractWeather = () => {
+      const weather = {
+        current: {
+          temperature: extractValue('meteo.temperature.value') || 
+                      extractValue('weather.temperature') ||
+                      (status?.meteo?.temperature?.value ? parseFloat(status.meteo.temperature.value) : null),
+          humidity: extractValue('meteo.humidity.value') || 
+                   extractValue('weather.humidity') ||
+                   (status?.meteo?.humidity?.value ? parseFloat(status.meteo.humidity.value) : null),
+          pressure: extractValue('meteo.pressure.value') || 
+                   extractValue('weather.pressure') || null,
+          windSpeed: extractValue('meteo.wind.speed.value') || 
+                    extractValue('weather.wind.speed') || null,
+          windDirection: extractValue('meteo.wind.direction.value') || 
+                        extractValue('weather.wind.direction') || null,
+          uvIndex: extractValue('meteo.uv.value') || 
+                  extractValue('weather.uv') || null,
+          visibility: extractValue('meteo.visibility.value') || 
+                     extractValue('weather.visibility') || null,
+          condition: data.meteo?.condition?.value || 
+                    data.weather?.condition || 'Unknown'
+        },
+        forecast: []
+      };
+
+      // Extract forecast data if available
+      if (data.meteo && data.meteo.forecast) {
+        Object.entries(data.meteo.forecast).forEach(([day, forecast]: [string, any]) => {
+          if (forecast && typeof forecast === 'object') {
+            weather.forecast.push({
+              day: day,
+              tempMin: parseFloat(forecast.tempMin?.value) || null,
+              tempMax: parseFloat(forecast.tempMax?.value) || null,
+              humidity: parseFloat(forecast.humidity?.value) || null,
+              windSpeed: parseFloat(forecast.windSpeed?.value) || null,
+              condition: forecast.condition?.value || 'Unknown',
+              rain: parseFloat(forecast.rain?.value) || null
+            });
+          }
+        });
+      }
+
+      return weather;
     };
 
     // Extract alerts and alarms from the API
@@ -106,24 +152,19 @@ const Index = () => {
                        extractValue('energy.today') ||
                        extractValue('globals.energy.daily') || 0;
 
-    const temperature = extractValue('meteo.temperature.value') ||
-                       extractValue('temperature.outdoor') ||
-                       (status?.meteo?.temperature?.value ? parseFloat(status.meteo.temperature.value) : 20);
-
-    const humidity = extractValue('meteo.humidity.value') ||
-                    (status?.meteo?.humidity?.value ? parseFloat(status.meteo.humidity.value) : 50);
+    const weather = extractWeather();
+    const alerts = extractAlerts();
 
     // Calculate some derived values for building management
     const estimatedMonthlyCost = dailyEnergy * 30 * 0.25; // Assuming €0.25/kWh
     const powerEfficiency = powerConsumption > 0 ? (dailyEnergy / 24) / powerConsumption * 100 : 100;
 
-    const alerts = extractAlerts();
-
     return {
       currentPower: powerConsumption,
       dailyEnergy: dailyEnergy,
-      temperature: temperature,
-      humidity: humidity,
+      temperature: weather.current.temperature,
+      humidity: weather.current.humidity,
+      weather: weather,
       monthlyCost: estimatedMonthlyCost,
       efficiency: Math.min(powerEfficiency, 100),
       alerts: alerts,
@@ -287,8 +328,12 @@ const Index = () => {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">System Status:</span>
-                  <span className={`font-medium ${energyValues?.systemStatus === 'normal' ? 'text-energy-success' : 'text-energy-danger'}`}>
-                    {energyValues?.systemStatus === 'normal' ? 'Normal' : 'Alert'}
+                  <span className={`font-medium ${
+                    energyValues?.systemStatus === 'normal' ? 'text-energy-success' : 
+                    energyValues?.systemStatus === 'warning' ? 'text-energy-warning' : 'text-energy-danger'
+                  }`}>
+                    {energyValues?.systemStatus === 'normal' ? 'Normal' : 
+                     energyValues?.systemStatus === 'warning' ? 'Warning' : 'Alert'}
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -382,6 +427,99 @@ const Index = () => {
             </div>
           </div>
         </div>
+
+        {/* Weather Forecast Section */}
+        {energyValues?.weather?.forecast && energyValues.weather.forecast.length > 0 && (
+          <div className="mt-6">
+            <div className="bg-gradient-card border border-border rounded-lg p-6 shadow-card-custom">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-accent" />
+                Weather Forecast
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
+                {energyValues.weather.forecast.slice(0, 5).map((day, index) => (
+                  <div key={day.day || index} className="text-center p-3 bg-background/30 rounded-lg">
+                    <div className="text-sm font-medium mb-2">Day {index + 1}</div>
+                    <div className="space-y-1 text-xs">
+                      {day.tempMax && day.tempMin && (
+                        <div>
+                          <span className="text-energy-danger">{day.tempMax.toFixed(0)}°</span>
+                          <span className="text-muted-foreground mx-1">/</span>
+                          <span className="text-primary">{day.tempMin.toFixed(0)}°</span>
+                        </div>
+                      )}
+                      {day.humidity && (
+                        <div className="text-muted-foreground">{day.humidity.toFixed(0)}% RH</div>
+                      )}
+                      {day.windSpeed && (
+                        <div className="text-muted-foreground">{day.windSpeed.toFixed(1)} m/s</div>
+                      )}
+                      {day.rain && day.rain > 0 && (
+                        <div className="text-primary">💧 {day.rain.toFixed(1)}mm</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Weather Details Section */}
+        {energyValues?.weather && (
+          <div className="mt-6">
+            <div className="bg-gradient-card border border-border rounded-lg p-6 shadow-card-custom">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Current Weather Conditions
+              </h3>
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                {energyValues.weather.current.temperature && (
+                  <div className="text-center p-3 bg-background/30 rounded-lg">
+                    <div className="text-2xl mb-1">🌡️</div>
+                    <div className="text-sm font-medium">Temperature</div>
+                    <div className="text-lg font-bold text-primary">{energyValues.weather.current.temperature.toFixed(1)}°C</div>
+                  </div>
+                )}
+                {energyValues.weather.current.humidity && (
+                  <div className="text-center p-3 bg-background/30 rounded-lg">
+                    <div className="text-2xl mb-1">💧</div>
+                    <div className="text-sm font-medium">Humidity</div>
+                    <div className="text-lg font-bold text-accent">{energyValues.weather.current.humidity.toFixed(0)}%</div>
+                  </div>
+                )}
+                {energyValues.weather.current.windSpeed && (
+                  <div className="text-center p-3 bg-background/30 rounded-lg">
+                    <div className="text-2xl mb-1">💨</div>
+                    <div className="text-sm font-medium">Wind Speed</div>
+                    <div className="text-lg font-bold text-energy-success">{energyValues.weather.current.windSpeed.toFixed(1)} m/s</div>
+                  </div>
+                )}
+                {energyValues.weather.current.pressure && (
+                  <div className="text-center p-3 bg-background/30 rounded-lg">
+                    <div className="text-2xl mb-1">🌀</div>
+                    <div className="text-sm font-medium">Pressure</div>
+                    <div className="text-lg font-bold text-muted-foreground">{energyValues.weather.current.pressure.toFixed(0)} hPa</div>
+                  </div>
+                )}
+                {energyValues.weather.current.uvIndex && (
+                  <div className="text-center p-3 bg-background/30 rounded-lg">
+                    <div className="text-2xl mb-1">☀️</div>
+                    <div className="text-sm font-medium">UV Index</div>
+                    <div className="text-lg font-bold text-energy-warning">{energyValues.weather.current.uvIndex.toFixed(0)}</div>
+                  </div>
+                )}
+                {energyValues.weather.current.visibility && (
+                  <div className="text-center p-3 bg-background/30 rounded-lg">
+                    <div className="text-2xl mb-1">👁️</div>
+                    <div className="text-sm font-medium">Visibility</div>
+                    <div className="text-lg font-bold text-muted-foreground">{energyValues.weather.current.visibility.toFixed(1)} km</div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        )}
       </main>
     </div>
   );
