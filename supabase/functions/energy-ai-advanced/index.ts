@@ -34,6 +34,7 @@ serve(async (req) => {
 
     const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
     if (!openAIApiKey) {
+      console.error('OpenAI API key not configured');
       throw new Error('OpenAI API key not configured');
     }
 
@@ -42,6 +43,7 @@ serve(async (req) => {
     console.log(`Starting advanced analysis: ${analysis_type} for ${time_horizon}`);
 
     // Fetch comprehensive data
+    console.log('Fetching energy and related data...');
     const [energyData, weatherData, costData, alarmsData] = await Promise.all([
       fetchEnergyReadings(supabaseClient, time_horizon),
       include_weather ? fetchWeatherData(supabaseClient, time_horizon) : null,
@@ -49,7 +51,30 @@ serve(async (req) => {
       fetchAlarmsData(supabaseClient, time_horizon)
     ]);
 
+    console.log(`Fetched data: Energy=${energyData?.length || 0}, Weather=${weatherData?.length || 0}, Cost=${costData?.length || 0}, Alarms=${alarmsData?.length || 0}`);
+
+    if (!energyData || energyData.length === 0) {
+      console.log('No energy data available, creating sample analysis');
+      return new Response(JSON.stringify({
+        success: true,
+        analysis_type: analysis_type,
+        insights: JSON.stringify({
+          executive_summary: "No recent energy data available for analysis. Please ensure your energy monitoring system is collecting data.",
+          energy_efficiency_score: "Unable to calculate - insufficient data",
+          top_3_optimization_opportunities: "1. Verify data collection is working 2. Check system connections 3. Import historical data if available",
+          predictive_insights: "Predictions require historical energy consumption data to establish patterns and trends.",
+          financial_impact: "Financial analysis requires energy consumption and cost data to provide accurate estimates.",
+          sustainability_metrics: "Carbon footprint and efficiency metrics need consumption data to calculate environmental impact."
+        }),
+        generated_at: new Date().toISOString(),
+        model_used: 'gpt-5-2025-08-07'
+      }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     let result;
+    console.log(`Running analysis type: ${analysis_type}`);
     switch (analysis_type) {
       case 'comprehensive':
         result = await performComprehensiveAnalysis(energyData, weatherData, costData, alarmsData, openAIApiKey);
@@ -321,43 +346,57 @@ Focus on actionable insights for system operators and maintenance teams.
 }
 
 async function callGPTAnalysis(prompt: string, apiKey: string, analysisType: string) {
-  const response = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${apiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      model: 'gpt-5-2025-08-07',
-      messages: [
-        {
-          role: 'system',
-          content: 'You are an expert energy systems analyst with deep knowledge of building automation, renewable energy, and optimization strategies. Provide detailed, actionable insights based on data analysis.'
-        },
-        {
-          role: 'user',
-          content: prompt
-        }
-      ],
-      max_completion_tokens: 2000,
-    }),
-  });
-
-  if (!response.ok) {
-    const errorData = await response.text();
-    console.error('OpenAI API error:', errorData);
-    throw new Error(`OpenAI API error: ${response.status}`);
-  }
-
-  const data = await response.json();
+  console.log(`Making OpenAI API call for ${analysisType}...`);
+  console.log(`Prompt length: ${prompt.length} characters`);
   
-  return {
-    success: true,
-    analysis_type: analysisType,
-    insights: data.choices[0].message.content,
-    generated_at: new Date().toISOString(),
-    model_used: 'gpt-5-2025-08-07'
-  };
+  try {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        model: 'gpt-5-2025-08-07',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are an expert energy systems analyst with deep knowledge of building automation, renewable energy, and optimization strategies. Provide detailed, actionable insights based on data analysis.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_completion_tokens: 2000,
+      }),
+    });
+
+    console.log(`OpenAI API response status: ${response.status}`);
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('OpenAI API error response:', errorData);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorData}`);
+    }
+
+    const data = await response.json();
+    console.log('OpenAI API response received successfully');
+    
+    const insights = data.choices[0].message.content;
+    console.log(`Generated insights length: ${insights?.length || 0} characters`);
+    
+    return {
+      success: true,
+      analysis_type: analysisType,
+      insights: insights,
+      generated_at: new Date().toISOString(),
+      model_used: 'gpt-5-2025-08-07'
+    };
+  } catch (error) {
+    console.error('Error in callGPTAnalysis:', error);
+    throw error;
+  }
 }
 
 // Utility functions for data analysis

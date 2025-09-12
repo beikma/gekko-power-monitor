@@ -336,23 +336,53 @@ export default function AdvancedAIDashboard() {
                           </p>
                         </div>
                       </div>
-                      <Button
-                        onClick={handleAdvancedAnalysis}
-                        disabled={isAnalyzing}
-                        className="min-w-32"
-                      >
-                        {isAnalyzing ? (
-                          <div className="flex items-center gap-2">
-                            <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                            Analyzing...
-                          </div>
-                        ) : (
-                          <>
-                            <Brain className="h-4 w-4 mr-2" />
-                            Run Analysis
-                          </>
-                        )}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleAdvancedAnalysis}
+                          disabled={isAnalyzing}
+                          className="min-w-32"
+                        >
+                          {isAnalyzing ? (
+                            <div className="flex items-center gap-2">
+                              <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                              Analyzing...
+                            </div>
+                          ) : (
+                            <>
+                              <Brain className="h-4 w-4 mr-2" />
+                              Run Analysis
+                            </>
+                          )}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const testResult = {
+                              success: true,
+                              analysis_type: 'test',
+                              insights: JSON.stringify({
+                                executive_summary: "This is a test analysis to verify the display is working correctly. Your energy system shows normal operation patterns.",
+                                energy_efficiency_score: "85/100 - Good efficiency with room for improvement through battery optimization",
+                                top_3_optimization_opportunities: "1. Optimize battery charging schedule 2. Increase solar self-consumption 3. Implement peak shaving during high tariff periods",
+                                predictive_insights: "Energy consumption expected to increase 15% during evening hours. Solar generation forecasted at 3.2kW peak.",
+                                financial_impact: "Potential savings of €25-30/month through optimized energy management and peak shaving strategies",
+                                sustainability_metrics: "Current CO2 reduction: 1.2 tons/year. Renewable energy share: 68% of total consumption"
+                              }),
+                              generated_at: new Date().toISOString(),
+                              model_used: 'test-display'
+                            };
+                            setAnalysisResult(testResult);
+                            setActiveTab('results');
+                            toast({
+                              title: "Test Results Loaded",
+                              description: "Sample analysis results for testing display",
+                            });
+                          }}
+                        >
+                          Test Display
+                        </Button>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
@@ -376,40 +406,72 @@ export default function AdvancedAIDashboard() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    {(() => {
-                      const parsedInsights = parseInsights(analysisResult.insights);
-                      const insightCards = getInsightCards(parsedInsights);
-                      
-                      if (insightCards.length > 0) {
-                        return (
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {insightCards.map((card, index) => (
-                              <Card key={index} className={`${card.color} border-2`}>
-                                <CardHeader className="pb-3">
-                                  <CardTitle className="flex items-center gap-2 text-base">
-                                    <card.icon className="h-5 w-5" />
-                                    {card.title}
-                                  </CardTitle>
-                                </CardHeader>
-                                <CardContent className="pt-0">
-                                  <p className="text-sm text-muted-foreground leading-relaxed">
-                                    {card.content}
-                                  </p>
-                                </CardContent>
-                              </Card>
-                            ))}
-                          </div>
-                        );
-                      } else {
-                        return (
-                          <div className="prose prose-sm max-w-none">
-                            <pre className="whitespace-pre-wrap bg-muted p-4 rounded-lg text-sm">
-                              {analysisResult.insights}
-                            </pre>
-                          </div>
-                        );
-                      }
-                    })()}
+                    {analysisResult.insights ? (
+                      (() => {
+                        try {
+                          const parsedInsights = parseInsights(analysisResult.insights);
+                          const insightCards = getInsightCards(parsedInsights);
+                          
+                          if (insightCards.length > 0) {
+                            return (
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                {insightCards.map((card, index) => (
+                                  <Card key={index} className={`${card.color} border-2`}>
+                                    <CardHeader className="pb-3">
+                                      <CardTitle className="flex items-center gap-2 text-base">
+                                        <card.icon className="h-5 w-5" />
+                                        {card.title}
+                                      </CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="pt-0">
+                                      <p className="text-sm text-muted-foreground leading-relaxed">
+                                        {card.content}
+                                      </p>
+                                    </CardContent>
+                                  </Card>
+                                ))}
+                              </div>
+                            );
+                          } else {
+                            return (
+                              <div className="prose prose-sm max-w-none">
+                                <pre className="whitespace-pre-wrap bg-muted p-4 rounded-lg text-sm">
+                                  {analysisResult.insights}
+                                </pre>
+                              </div>
+                            );
+                          }
+                        } catch (error) {
+                          console.error('Error parsing insights:', error);
+                          return (
+                            <div className="prose prose-sm max-w-none">
+                              <div className="bg-muted p-4 rounded-lg">
+                                <h4 className="text-sm font-medium mb-2">Raw Analysis Results:</h4>
+                                <pre className="whitespace-pre-wrap text-xs">
+                                  {analysisResult.insights}
+                                </pre>
+                              </div>
+                            </div>
+                          );
+                        }
+                      })()
+                    ) : (
+                      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                        <div className="flex items-center gap-2 text-yellow-700">
+                          <AlertTriangle className="h-5 w-5" />
+                          <span className="font-medium">No Insights Available</span>
+                        </div>
+                        <p className="text-yellow-600 text-sm mt-1">
+                          The analysis completed but no insights were generated. This might be due to insufficient data or an API issue.
+                        </p>
+                        <details className="mt-3">
+                          <summary className="cursor-pointer text-sm text-yellow-700 font-medium">Debug Info</summary>
+                          <pre className="mt-2 text-xs bg-yellow-100 p-2 rounded">
+                            {JSON.stringify(analysisResult, null, 2)}
+                          </pre>
+                        </details>
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
 
