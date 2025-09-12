@@ -35,25 +35,59 @@ const Index = () => {
       return typeof value === 'number' ? value : (typeof value === 'string' ? parseFloat(value) : 0) || 0;
     };
 
+    // Extract energy management data from energymanager.item0.sumstate.value
+    let currentPower = 0;
+    let dailyEnergy = 0;
+    let batteryLevel = 0;
+    let pvPower = 0;
+    let gridPower = 0;
+
+    try {
+      // Check if energymanager data exists
+      if (status?.energymanager?.item0?.sumstate?.value) {
+        const energyString = status.energymanager.item0.sumstate.value;
+        console.log("Energy management string:", energyString);
+        
+        // Parse the semicolon-separated values: "16.10;71.3;51;2.5;11.00;..."
+        const values = energyString.split(';').map((v: string) => parseFloat(v) || 0);
+        
+        if (values.length >= 5) {
+          currentPower = values[0]; // Current power consumption (16.10 kW)
+          dailyEnergy = values[1]; // Daily energy (71.3 kWh)
+          batteryLevel = values[2]; // Battery level (51%)
+          gridPower = values[3]; // Power from grid (2.5 kW)
+          pvPower = values[4]; // PV power generation (11.00 kW)
+          
+          console.log("Extracted energy data:", {
+            currentPower,
+            dailyEnergy,
+            batteryLevel,
+            pvPower,
+            gridPower
+          });
+        }
+      }
+    } catch (error) {
+      console.error("Energy data extraction error:", error);
+    }
+
     // Extract comprehensive weather data
     const extractWeather = () => {
       const weather = {
         current: {
-          temperature: status?.globals?.meteo?.temperature?.value ? parseFloat(status.globals.meteo.temperature.value) : null,
-          humidity: status?.globals?.meteo?.humidity?.value ? parseFloat(status.globals.meteo.humidity.value) : null,
-          pressure: status?.globals?.meteo?.pressure?.value ? parseFloat(status.globals.meteo.pressure.value) : null,
-          windSpeed: status?.globals?.meteo?.wind?.value ? parseFloat(status.globals.meteo.wind.value) : null,
-          windDirection: status?.globals?.meteo?.windDirection?.value ? parseFloat(status.globals.meteo.windDirection.value) : null,
-          uvIndex: status?.globals?.meteo?.uvIndex?.value ? parseFloat(status.globals.meteo.uvIndex.value) : null,
-          visibility: status?.globals?.meteo?.twilight?.value ? parseFloat(status.globals.meteo.twilight.value) : null,
-          condition: 'Clear' // Default condition since we have basic weather data
+          temperature: status?.globals?.meteo?.current_temp || null,
+          humidity: status?.globals?.meteo?.current_hum || null,
+          pressure: status?.globals?.meteo?.current_press || null,
+          windSpeed: status?.globals?.meteo?.current_wind || null,
+          windDirection: status?.globals?.meteo?.current_winddir || null,
+          uvIndex: status?.globals?.meteo?.current_uv || null,
+          visibility: status?.globals?.meteo?.current_vis || null,
+          condition: status?.globals?.meteo?.current_cond || 'Clear'
         },
         forecast: []
       };
 
-      console.log('Extracted weather current:', weather.current);
-
-      // Extract forecast data if available (simplified since basic API doesn't have forecast)
+      // Extract forecast data if available
       return weather;
     };
 
@@ -118,26 +152,31 @@ const Index = () => {
       return alerts.slice(0, 5); // Limit to 5 most recent alerts
     };
 
-    // Look for common energy parameter names in myGEKKO systems
-    const powerConsumption = extractValue('energy.power') || 
-                           extractValue('power.current') ||
-                           extractValue('globals.power.value') ||
-                           extractValue('variables.power') || 0;
+    // Look for common energy parameter names in myGEKKO systems (fallback if energymanager not available)
+    if (currentPower === 0 && dailyEnergy === 0) {
+      currentPower = extractValue('energy.power') || 
+                     extractValue('power.current') ||
+                     extractValue('globals.power.value') ||
+                     extractValue('variables.power') || 0;
 
-    const dailyEnergy = extractValue('energy.daily') ||
-                       extractValue('energy.today') ||
-                       extractValue('globals.energy.daily') || 0;
+      dailyEnergy = extractValue('energy.daily') ||
+                    extractValue('energy.today') ||
+                    extractValue('globals.energy.daily') || 0;
+    }
 
     const weather = extractWeather();
     const alerts = extractAlerts();
 
     // Calculate some derived values for building management
     const estimatedMonthlyCost = dailyEnergy * 30 * 0.25; // Assuming €0.25/kWh
-    const powerEfficiency = powerConsumption > 0 ? (dailyEnergy / 24) / powerConsumption * 100 : 100;
+    const powerEfficiency = pvPower > 0 ? (pvPower / (currentPower || 1)) * 100 : 100;
 
     return {
-      currentPower: powerConsumption,
+      currentPower: currentPower,
       dailyEnergy: dailyEnergy,
+      batteryLevel: batteryLevel,
+      pvPower: pvPower,
+      gridPower: gridPower,
       temperature: weather.current.temperature,
       humidity: weather.current.humidity,
       weather: weather,
