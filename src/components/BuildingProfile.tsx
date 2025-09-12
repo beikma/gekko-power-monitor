@@ -7,7 +7,7 @@ import { useBuildingData } from "@/hooks/useBuildingData";
 import BuildingMap from "./BuildingMap";
 import BuildingImageUpload from "./BuildingImageUpload";
 
-export default function BuildingProfile() {
+const BuildingProfile = () => {
   const { buildingInfo, locationData, isLoadingLocation } = useBuildingInfo();
   const { manualInfo } = useBuildingData();
 
@@ -246,4 +246,6 @@ export default function BuildingProfile() {
       </CardContent>
     </Card>
   );
-}
+};
+
+export default BuildingProfile;
