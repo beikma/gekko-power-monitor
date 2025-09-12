@@ -17,6 +17,7 @@ serve(async (req) => {
     const username = url.searchParams.get('username');
     const key = url.searchParams.get('key');
     const gekkoid = url.searchParams.get('gekkoid');
+    const value = url.searchParams.get('value'); // For command requests
 
     if (!endpoint || !username || !key || !gekkoid) {
       return new Response(
@@ -35,12 +36,22 @@ serve(async (req) => {
       gekkoid,
     });
 
+    // Add value parameter if it's a command request (POST) and value is provided
+    if (req.method === 'POST' && value !== null) {
+      gekkoParams.append('value', value);
+    }
+
     const gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
     
-    console.log(`Proxying request to: ${gekkoUrl}`);
+    console.log(`Proxying ${req.method} request to: ${gekkoUrl}`);
 
-    // Make the request to myGEKKO API
-    const response = await fetch(gekkoUrl);
+    // Make the request to myGEKKO API with same method
+    const response = await fetch(gekkoUrl, {
+      method: req.method,
+      headers: req.method === 'POST' ? {
+        'Content-Type': 'application/json'
+      } : undefined
+    });
     
     if (!response.ok) {
       console.error(`myGEKKO API error: ${response.status} - ${response.statusText}`);
@@ -70,11 +81,19 @@ serve(async (req) => {
       );
     }
 
-    const data = await response.json();
-    console.log('Successfully fetched data from myGEKKO API');
+    const data = await response.text(); // Use text() instead of json() in case of command responses
+    console.log(`Successfully processed ${req.method} request to myGEKKO API`);
+
+    // Try to parse as JSON, but return as text if it fails
+    let responseData;
+    try {
+      responseData = JSON.parse(data);
+    } catch {
+      responseData = { result: data }; // Wrap plain text responses
+    }
 
     return new Response(
-      JSON.stringify(data),
+      JSON.stringify(responseData),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }

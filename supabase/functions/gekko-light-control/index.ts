@@ -103,7 +103,7 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
     const lightCommands = [];
     
     for (const lightItem of lightItems) {
-      const commandUrl = `https://live.my-gekko.com/api/v1/var/${lightItem.id}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
+      const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightItem.id}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
       
       console.log(`Sending command to light ${lightItem.id}: ${commandUrl}`);
       
@@ -155,7 +155,7 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
     // Toggle the state - if currently on (1), turn off (0) and vice versa
     const newState = currentState === '1' ? '0' : '1';
     
-    const commandUrl = `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`;
+    const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`;
     
     console.log(`Toggling light ${lightId} from ${currentState} to ${newState}`);
     console.log(`Command URL: ${commandUrl}`);
@@ -190,7 +190,7 @@ async function setBrightness(username: string, key: string, gekkoId: string, lig
     // Format: D followed by brightness percentage (0-100)
     const command = `D${Math.max(0, Math.min(100, brightness))}`;
     
-    const commandUrl = `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
+    const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
     
     console.log(`Setting brightness for ${lightId} to ${brightness}%`);
     console.log(`Command URL: ${commandUrl}`);
