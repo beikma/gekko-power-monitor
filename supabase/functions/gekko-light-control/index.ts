@@ -187,24 +187,24 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
       // Test different URL formats sequentially
       const testFormats = [
         {
-          name: "scmd endpoint with index",
+          name: "direct command to myGEKKO",
+          url: `https://live.my-gekko.com/api/v1/var/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
+        },
+        {
+          name: "myGEKKO item command",
+          url: `https://live.my-gekko.com/api/v1/var/${lightId}/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`
+        },
+        {
+          name: "proxy scmd endpoint",
           url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
         },
         {
-          name: "var/scmd with index", 
+          name: "proxy var/scmd with index", 
           url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
         },
         {
-          name: "direct index command",
-          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`
-        },
-        {
-          name: "item scmd path",
+          name: "proxy item path",
           url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`
-        },
-        {
-          name: "lights path",
-          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/lights/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`
         }
       ];
       
