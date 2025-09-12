@@ -102,6 +102,7 @@ export default function AdvancedAIDashboard() {
   const [selectedAnalysis, setSelectedAnalysis] = useState<string>('comprehensive');
   const [analysisHistory, setAnalysisHistory] = useState<AdvancedAnalysisResult[]>([]);
   const [predictionData, setPredictionData] = useState<any[]>([]);
+  const [activeTab, setActiveTab] = useState<string>('analysis');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -151,9 +152,12 @@ export default function AdvancedAIDashboard() {
         })));
       }
 
+      // Automatically switch to Results tab
+      setActiveTab('results');
+      
       toast({
         title: "AI Analysis Complete",
-        description: `${data.analysis_type} analysis finished successfully`,
+        description: `${data.analysis_type} analysis finished successfully - Check the Results tab!`,
       });
 
     } catch (error) {
@@ -271,10 +275,15 @@ export default function AdvancedAIDashboard() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <Tabs defaultValue="analysis" className="w-full">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="analysis">AI Analysis</TabsTrigger>
-            <TabsTrigger value="results">Results</TabsTrigger>
+            <TabsTrigger value="results" className="relative">
+              Results
+              {analysisResult && (
+                <div className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full animate-pulse" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
 
