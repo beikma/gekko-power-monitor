@@ -71,3 +71,25 @@ Yes, you can!
 To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+
+## Security
+
+### Rotate Secrets
+**Important**: If any API keys or secrets in this repository were real and committed to version control, they must be rotated immediately.
+
+**Last rotation check**: [DATE_NOT_SET] - Update this date when you rotate your API keys.
+
+### Security Guidelines
+- Never commit `.env` files or any secrets to version control
+- Use `.env.example` as a template for required environment variables
+- Rotate API keys every 90 days or immediately if compromised
+- See [SECURITY.md](./SECURITY.md) for complete security guidelines
+
+### MCP Server Security
+The MCP server includes security hardening:
+- Bearer token authentication required
+- Rate limiting (30 req/min per IP)
+- Input validation with Zod schemas
+- CORS protection
+- Request timeouts (8s)
+- Sanitized error responses
