@@ -84,67 +84,49 @@ export function SocketAnalyzer() {
   };
 
   const testSocket = async (socketId: string, command: 'on' | 'off') => {
-    const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-    const baseParams = {
-      username: 'mustermann@my-gekko.com',
-      key: 'HjR9j4BrruA8wZiBeiWXnD',
-      gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
-    };
-    
-    const commandValue = command === 'on' ? '1' : '0';
-    
-      // Try multiple endpoint variations for loads/sockets
-      const endpointVariations = [
-        `var/loads/${socketId}/set`,
-        `var/loads/${socketId}/scmd`, 
-        `var/${socketId}/set`,
-        `var/${socketId}/scmd`
-      ];
+    try {
+      const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
+      const baseParams = {
+        username: 'mustermann@my-gekko.com',
+        key: 'HjR9j4BrruA8wZiBeiWXnD',
+        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
+      };
       
-      let lastError: any;
+      // Use the correct working endpoint: var/loads/socketId/scmd with proper socket values
+      const endpoint = `var/loads/${socketId}/scmd`;
+      const params = new URLSearchParams({
+        ...baseParams,
+        value: command === 'on' ? '2' : '0'  // 2=OnPermanent, 0=Off for sockets
+      });
       
-      for (const endpoint of endpointVariations) {
-        try {
-          const params = new URLSearchParams({
-            ...baseParams,
-            value: commandValue
-          });
-          
-          console.log(`🔄 Trying: ${proxyUrl}?endpoint=${endpoint}&${params}`);
-          
-          const response = await fetch(`${proxyUrl}?endpoint=${endpoint}&${params}`);
-          const responseText = await response.text();
-          
-          console.log(`📡 ${endpoint} → ${response.status}: ${responseText}`);
-          
-          if (response.ok) {
-            toast({
-              title: `${socketId.toUpperCase()} ${command.toUpperCase()}`,
-              description: `Success via ${endpoint}`,
-            });
-            
-            // Refresh data after 2 seconds
-            setTimeout(() => {
-              fetchSocketData();
-            }, 2000);
-            return;
-          } else {
-            lastError = new Error(`${endpoint}: HTTP ${response.status} - ${responseText}`);
-          }
-          
-        } catch (error) {
-          lastError = error;
-          console.log(`❌ ${endpoint} failed:`, error);
-        }
+      console.log(`🔄 Using working endpoint: ${proxyUrl}?endpoint=${endpoint}&${params}`);
+      
+      const response = await fetch(`${proxyUrl}?endpoint=${endpoint}&${params}`);
+      const responseText = await response.text();
+      
+      console.log(`📡 ${endpoint} → ${response.status}: ${responseText}`);
+      
+      if (response.ok) {
+        toast({
+          title: `${socketId.toUpperCase()} ${command.toUpperCase()}`,
+          description: `Success! Socket ${command === 'on' ? 'turned on permanently' : 'turned off'}`,
+        });
+        
+        // Refresh data after 2 seconds
+        setTimeout(() => {
+          fetchSocketData();
+        }, 2000);
+      } else {
+        throw new Error(`${endpoint}: HTTP ${response.status} - ${responseText}`);
       }
-    
-    // If all methods failed
-    toast({
-      title: "All Methods Failed",
-      description: `Tried ${endpointVariations.length} endpoints for ${socketId}`,
-      variant: "destructive",
-    });
-    console.error('All socket control methods failed:', lastError);
+    } catch (error) {
+      toast({
+        title: "Command Failed",
+        description: `Failed to ${command} ${socketId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        variant: "destructive",
+      });
+      console.error(`❌ Socket command failed:`, error);
+    }
   };
 
   useEffect(() => {
