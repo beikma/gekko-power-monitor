@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import React from "react";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { DashboardOverview } from "./components/overview/DashboardOverview";
 import EnergyDetailsDashboard from "./components/EnergyDetailsDashboard";
@@ -100,8 +101,8 @@ const App = () => (
   </QueryClientProvider>
 );
 
-// Wrapper components with data fetching
-function EnergyDashboard() {
+// Wrapper components with data fetching - defined as proper React components
+const EnergyDashboard: React.FC = () => {
   const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
   
   // Debug logging
@@ -111,9 +112,9 @@ function EnergyDashboard() {
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
   return <EnergyDetailsDashboard data={status} />;
-}
+};
 
-function LightingDashboard() {
+const LightingDashboard: React.FC = () => {
   const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
   
   // Debug logging
@@ -123,9 +124,9 @@ function LightingDashboard() {
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
   return <LightingControlDashboard data={data} status={status} />;
-}
+};
 
-function ClimateDashboard() {
+const ClimateDashboard: React.FC = () => {
   const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
   
   // Debug logging
@@ -135,20 +136,20 @@ function ClimateDashboard() {
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
   return <ClimateControlDashboard data={status} />;
-}
+};
 
-function SecurityDashboard() {
+const SecurityDashboard: React.FC = () => {
   const { data, status } = useGekkoApi({ refreshInterval: 30000 });
   return <SecuritySystemDashboard data={data} />;
-}
+};
 
-function AnalyticsDashboard() {
+const AnalyticsDashboard: React.FC = () => {
   const { data, status, isLoading, connectionStatus } = useGekkoApi({ refreshInterval: 30000 });
   return <SmartHomeDashboard data={data} status={status} isLoading={isLoading} connectionStatus={connectionStatus} />;
-}
+};
 
-// Placeholder components for missing pages
-function SystemStatusPage() {
+// Placeholder components for missing pages - defined as proper React components
+const SystemStatusPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="text-center py-12">
@@ -157,9 +158,9 @@ function SystemStatusPage() {
       </div>
     </div>
   );
-}
+};
 
-function SettingsPage() {
+const SettingsPage: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="text-center py-12">
@@ -168,6 +169,6 @@ function SettingsPage() {
       </div>
     </div>
   );
-}
+};
 
 export default App;
