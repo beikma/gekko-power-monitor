@@ -10,7 +10,8 @@ import {
   Building,
   Activity,
   MessageSquare,
-  Upload
+  Upload,
+  Wrench
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -45,6 +46,7 @@ const managementItems = [
 const systemItems = [
   { title: "System Status", url: "/status", icon: Activity },
   { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Admin", url: "/admin", icon: Wrench },
 ];
 
 export function AppSidebar() {
