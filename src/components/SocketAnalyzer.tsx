@@ -87,19 +87,19 @@ export function SocketAnalyzer() {
     try {
       const value = command === 'on' ? '2' : '0'; // 2 = OnPermanent, 0 = Off
       
-      // Call MyGekko API directly
+      // Try /set endpoint first (more direct for commands)
+      const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
       const params = new URLSearchParams({
+        endpoint: `var/loads/${socketId}/set`,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
         value: value
       });
 
-      const gekkoUrl = `https://live.my-gekko.com/api/v1/var/loads/${socketId}/scmd?${params}`;
+      console.log(`🔄 Trying /set endpoint: ${proxyUrl}?${params}`);
       
-      console.log(`🔄 Calling MyGekko API directly: ${gekkoUrl}`);
-      
-      const response = await fetch(gekkoUrl);
+      const response = await fetch(`${proxyUrl}?${params}`);
       const responseText = await response.text();
       
       console.log(`📡 API Response → ${response.status}: ${responseText}`);
