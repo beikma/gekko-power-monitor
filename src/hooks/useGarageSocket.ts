@@ -108,21 +108,36 @@ export function useGarageSocket() {
     });
     
     try {
-      // Try /set endpoint first (more direct for commands)
-      const value = newState ? '2' : '0'; // 2 = OnPermanent, 0 = Off
-      
+      // Step 1: Get command index for the socket
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      const params = new URLSearchParams({
-        endpoint: `var/loads/${socket.id}/set`,
+      const infoParams = new URLSearchParams({
+        endpoint: `var/${socket.id}/scmd`,
+        username: 'mustermann@my-gekko.com',
+        key: 'HjR9j4BrruA8wZiBeiWXnD',
+        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
+      });
+
+      console.log(`🔍 Getting command info for ${socket.id}...`);
+      const infoResponse = await fetch(`${proxyUrl}?${infoParams}`);
+      const infoData = await infoResponse.json();
+      
+      if (!infoResponse.ok || !infoData.index) {
+        throw new Error(`Failed to get command index for ${socket.id}`);
+      }
+
+      // Step 2: Execute command using index-based approach
+      const value = newState ? '2' : '0'; // 2 = OnPermanent, 0 = Off
+      const cmdParams = new URLSearchParams({
+        endpoint: 'var/scmd',
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
+        index: infoData.index,
         value: value
       });
 
-      console.log(`🚀 Trying /set endpoint: ${proxyUrl}?${params}`);
-      
-      const response = await fetch(`${proxyUrl}?${params}`);
+      console.log(`🚀 Executing: index=${infoData.index}, value=${value}`);
+      const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
       
