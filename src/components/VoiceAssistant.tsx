@@ -125,21 +125,68 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
     }
   };
 
-  const speak = (text: string) => {
+  const speak = async (text: string) => {
     if (!text.trim()) return;
 
     // Stop any current speech
     window.speechSynthesis.cancel();
+    setIsSpeaking(true);
 
+    try {
+      // Use OpenAI TTS for better quality
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: {
+          text,
+          voice: 'nova',
+          speed: 0.9
+        }
+      });
+
+      if (error) {
+        fallbackToWebSpeech(text);
+        return;
+      }
+
+      if (data?.audioContent) {
+        const audioData = atob(data.audioContent);
+        const arrayBuffer = new ArrayBuffer(audioData.length);
+        const view = new Uint8Array(arrayBuffer);
+        
+        for (let i = 0; i < audioData.length; i++) {
+          view[i] = audioData.charCodeAt(i);
+        }
+
+        const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.volume = 1.0;
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+        };
+        audio.onerror = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          fallbackToWebSpeech(text);
+        };
+
+        await audio.play();
+      } else {
+        throw new Error('No audio content');
+      }
+
+    } catch (error) {
+      console.error('TTS Error:', error);
+      fallbackToWebSpeech(text);
+    }
+  };
+
+  const fallbackToWebSpeech = (text: string) => {
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.9;
-    utterance.pitch = 1;
-    utterance.volume = 0.8;
-    
-    utterance.onstart = () => setIsSpeaking(true);
+    utterance.volume = 1.0;
     utterance.onend = () => setIsSpeaking(false);
     utterance.onerror = () => setIsSpeaking(false);
-
     window.speechSynthesis.speak(utterance);
   };
 
@@ -191,8 +238,8 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
       setInteractions(prev => [interaction, ...prev.slice(0, 9)]); // Keep last 10
       setResponse(assistantText);
       
-      // Speak the response
-      speak(assistantText);
+      // Speak the response with await for better handling
+      await speak(assistantText);
 
       toast({
         title: data.success ? 'Command Executed' : 'Command Failed',

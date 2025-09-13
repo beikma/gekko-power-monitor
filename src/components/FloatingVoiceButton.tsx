@@ -150,8 +150,8 @@ export function FloatingVoiceButton({ className = "fixed bottom-6 right-6 z-50" 
 
       const response = data.speechText || data.message || 'Command processed.';
       
-      // Speak the response
-      speak(response);
+      // Speak the response with await for better error handling
+      await speak(response);
 
       toast({
         title: data.success ? 'Command Executed' : 'Command Failed',
@@ -173,16 +173,80 @@ export function FloatingVoiceButton({ className = "fixed bottom-6 right-6 z-50" 
     }
   };
 
-  const speak = (text: string) => {
+  const speak = async (text: string) => {
     if (!text.trim()) return;
 
     // Stop any current speech
     window.speechSynthesis.cancel();
+    setIsSpeaking(true);
 
+    try {
+      console.log('🎵 Generating speech for:', text.substring(0, 50) + '...');
+      
+      // First try OpenAI TTS (higher quality)
+      const { data, error } = await supabase.functions.invoke('text-to-speech', {
+        body: {
+          text,
+          voice: 'nova', // Female voice, good for assistants
+          speed: 0.9
+        }
+      });
+
+      if (error) {
+        console.warn('OpenAI TTS failed, falling back to browser TTS:', error);
+        fallbackToWebSpeech(text);
+        return;
+      }
+
+      if (data?.audioContent) {
+        // Decode base64 audio and play
+        const audioData = atob(data.audioContent);
+        const arrayBuffer = new ArrayBuffer(audioData.length);
+        const view = new Uint8Array(arrayBuffer);
+        
+        for (let i = 0; i < audioData.length; i++) {
+          view[i] = audioData.charCodeAt(i);
+        }
+
+        // Create audio blob and play
+        const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
+        
+        audio.volume = 1.0;
+        audio.onended = () => {
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          console.log('🎵 OpenAI TTS playback completed');
+        };
+        audio.onerror = (error) => {
+          console.error('Audio playback error:', error);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          // Fallback to web speech
+          fallbackToWebSpeech(text);
+        };
+
+        await audio.play();
+        console.log('🎵 Playing OpenAI TTS audio');
+        
+      } else {
+        throw new Error('No audio content received');
+      }
+
+    } catch (error) {
+      console.error('TTS Error:', error);
+      fallbackToWebSpeech(text);
+    }
+  };
+
+  const fallbackToWebSpeech = (text: string) => {
+    console.log('🎤 Falling back to browser speech synthesis');
+    
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.rate = 0.85;  // Slightly slower for clarity
-    utterance.pitch = 1.1;  // Slightly higher pitch
-    utterance.volume = 1.0; // Maximum volume
+    utterance.rate = 0.85;
+    utterance.pitch = 1.1;
+    utterance.volume = 1.0;
     
     // Try to get a better voice
     const voices = window.speechSynthesis.getVoices();
@@ -196,31 +260,23 @@ export function FloatingVoiceButton({ className = "fixed bottom-6 right-6 z-50" 
     }
     
     utterance.onstart = () => {
-      setIsSpeaking(true);
-      console.log('TTS started:', text.substring(0, 50) + '...');
+      console.log('🎤 Browser TTS started');
     };
     utterance.onend = () => {
       setIsSpeaking(false);
-      console.log('TTS ended');
+      console.log('🎤 Browser TTS ended');
     };
     utterance.onerror = (error) => {
-      console.error('TTS error:', error);
+      console.error('Browser TTS error:', error);
       setIsSpeaking(false);
       toast({
         title: 'Speech Error',
-        description: 'Could not speak the response. Check your device volume.',
+        description: 'Audio output failed. Check your device volume and try again.',
         variant: 'destructive'
       });
     };
 
-    // Ensure speech synthesis is ready
-    if (window.speechSynthesis.getVoices().length === 0) {
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.speak(utterance);
-      };
-    } else {
-      window.speechSynthesis.speak(utterance);
-    }
+    window.speechSynthesis.speak(utterance);
   };
 
   const stopSpeaking = () => {
