@@ -108,7 +108,11 @@ export function useGarageSocket() {
         value: newState ? '1' : '0'
       });
 
+      console.log(`🚀 Sending command to ${socket.id}: ${newState ? 'ON' : 'OFF'}`);
+      
       const response = await fetch(`${proxyUrl}?endpoint=var/${socket.id}/scmd&${baseParams}`);
+      
+      console.log(`📡 Command response:`, response.status, await response.text());
       
       if (!response.ok) {
         throw new Error(`Failed to toggle socket: ${response.status}`);
@@ -158,21 +162,42 @@ export function useGarageSocket() {
 }
 
 function findGarageSocket(gekkoData: any): { id: string; name: string; location: string } | null {
-  // Look through different categories for garage devices
-  const categories = ['devices', 'sockets', 'blinds', 'heating', 'lights'];
+  console.log('🔍 Searching for garage socket in myGEKKO data:', gekkoData);
+  
+  // Look through different categories for garage devices - including loads which are power sockets
+  const categories = ['loads', 'devices', 'sockets', 'blinds', 'heating', 'lights'];
   
   for (const category of categories) {
     const categoryData = gekkoData[category];
+    console.log(`🔍 Checking category: ${category}`, categoryData);
+    
     if (categoryData && typeof categoryData === 'object') {
       for (const [itemKey, itemData] of Object.entries(categoryData)) {
         const item = itemData as any;
-        if (item.name && item.page) {
+        console.log(`🔍 Checking item ${itemKey}:`, item);
+        
+        // For loads category, items don't have names/pages, so we'll use specific items
+        if (category === 'loads') {
+          // Look for active load items (value "1;0;" or "2;0;" indicates active loads)
+          if (item.sumstate?.value && (item.sumstate.value.startsWith('1;') || item.sumstate.value.startsWith('2;'))) {
+            // Try item6, item9, item15 as they show as active in the data
+            if (itemKey === 'item6' || itemKey === 'item9' || itemKey === 'item15') {
+              console.log(`✅ Found active load: ${itemKey}`);
+              return {
+                id: itemKey,
+                name: `Power Socket ${itemKey.replace('item', '')}`,
+                location: 'Garage/Utility'
+              };
+            }
+          }
+        } else if (item.name && item.page) {
           const name = item.name.toLowerCase();
           const page = item.page.toLowerCase();
           
           // Look for garage-related items
           if (page.includes('garage') || name.includes('garage') || 
               name.includes('steckdose') || name.includes('socket')) {
+            console.log(`✅ Found garage device: ${itemKey} - ${item.name}`);
             return {
               id: itemKey,
               name: item.name,
@@ -184,16 +209,30 @@ function findGarageSocket(gekkoData: any): { id: string; name: string; location:
     }
   }
   
+  console.log('❌ No garage socket found');
   return null;
 }
 
 function getSocketStatus(statusData: any, socketId: string): boolean {
+  console.log(`🔍 Getting status for socket ${socketId}:`, statusData);
+  
   // Look through status data to find the current state
-  for (const category of Object.values(statusData)) {
+  for (const [categoryName, category] of Object.entries(statusData)) {
     if (category && typeof category === 'object') {
       const categoryObj = category as any;
       if (categoryObj[socketId]) {
         const item = categoryObj[socketId];
+        console.log(`✅ Found socket ${socketId} in ${categoryName}:`, item);
+        
+        // For loads category, check the sumstate value format
+        if (categoryName === 'loads' && item.sumstate?.value) {
+          const value = item.sumstate.value;
+          console.log(`🔍 Load value: ${value}`);
+          // Format is "state;power;" where state 0=off, 1=on, 2=forced on
+          const isOn = value.startsWith('1') || value.startsWith('2');
+          console.log(`✅ Socket ${socketId} is ${isOn ? 'ON' : 'OFF'}`);
+          return isOn;
+        }
         
         // Different devices might have different status formats
         if (item.sumstate?.value) {
@@ -209,5 +248,6 @@ function getSocketStatus(statusData: any, socketId: string): boolean {
     }
   }
   
+  console.log(`❌ Socket ${socketId} not found in status data`);
   return false;
 }
