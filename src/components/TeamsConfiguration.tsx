@@ -54,6 +54,8 @@ export function TeamsConfiguration() {
   const [editingConfig, setEditingConfig] = useState<TeamsConfig | null>(null);
   const { toast } = useToast();
 
+  console.log('TeamsConfiguration render - showAddForm:', showAddForm, 'configs:', configs.length);
+
   const [formData, setFormData] = useState({
     name: '',
     webhook_url: '',
@@ -259,7 +261,10 @@ export function TeamsConfiguration() {
                 Configure Teams channels to receive notifications about system alerts and alarms
               </CardDescription>
             </div>
-            <Button onClick={() => setShowAddForm(true)} className="flex items-center gap-2">
+            <Button onClick={() => {
+              console.log('Add Configuration button clicked');
+              setShowAddForm(true);
+            }} className="flex items-center gap-2">
               <Plus className="h-4 w-4" />
               Add Configuration
             </Button>
@@ -297,9 +302,9 @@ export function TeamsConfiguration() {
 
       {/* Add/Edit Form */}
       {showAddForm && (
-        <Card>
-          <CardHeader>
-            <CardTitle>
+        <Card className="border-2 border-primary/20">
+          <CardHeader className="bg-primary/5">
+            <CardTitle className="text-primary">
               {editingConfig ? 'Edit Teams Configuration' : 'Add Teams Configuration'}
             </CardTitle>
           </CardHeader>
@@ -386,10 +391,13 @@ export function TeamsConfiguration() {
               </div>
 
               <div className="flex gap-2">
-                <Button type="submit">
+                <Button type="submit" disabled={!formData.name || !formData.webhook_url}>
                   {editingConfig ? 'Update Configuration' : 'Create Configuration'}
                 </Button>
-                <Button type="button" variant="outline" onClick={resetForm}>
+                <Button type="button" variant="outline" onClick={() => {
+                  console.log('Cancel button clicked');
+                  resetForm();
+                }}>
                   Cancel
                 </Button>
               </div>
