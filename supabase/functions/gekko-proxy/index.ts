@@ -43,7 +43,7 @@ serve(async (req) => {
       method: req.method,
     };
 
-    // Handle command execution - use the correct myGEKKO API format
+    // Handle different myGEKKO API endpoints
     if (endpoint === 'var/scmd' && index && value !== null) {
       // Try different command formats - myGEKKO might need specific command format
       gekkoParams.append('index', index);
@@ -67,6 +67,20 @@ serve(async (req) => {
       requestOptions.method = 'GET';
       
       console.log(`🔧 Trying lights/scmd format: ${endpoint}, value=${value}`);
+    } else if (endpoint.startsWith('list/')) {
+      // Handle alarm list endpoints - these use a different API structure
+      const startrow = url.searchParams.get('startrow') || '0';
+      const rowcount = url.searchParams.get('rowcount') || '100';
+      const year = url.searchParams.get('year') || new Date().getFullYear().toString();
+      
+      gekkoParams.append('startrow', startrow);
+      gekkoParams.append('rowcount', rowcount);
+      gekkoParams.append('year', year);
+      
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+      
+      console.log(`🚨 Trying alarm list format: ${endpoint} with startrow=${startrow}, rowcount=${rowcount}, year=${year}`);
     } else {
       // For regular GET requests (status, info, etc.)
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;

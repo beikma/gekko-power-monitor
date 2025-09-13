@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, CheckCircle, Clock, Wifi, WifiOff, Settings, Thermometer, Cloud } from 'lucide-react';
+import { AlertTriangle, RefreshCw, CheckCircle, Clock, Wifi, WifiOff, Settings, Thermometer, Cloud } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
@@ -46,11 +46,23 @@ export function SystemAlarmsMonitor() {
       const response = await fetch(`${proxyUrl}?${params}`);
       
       if (!response.ok) {
+        console.error(`❌ API Error: ${response.status} ${response.statusText}`);
         throw new Error(`API Error: ${response.status}`);
       }
       
-      const data = await response.json();
-      console.log('📋 Raw alarm data:', data);
+      const responseText = await response.text();
+      console.log('📡 Raw response text:', responseText);
+      
+      let data;
+      try {
+        data = JSON.parse(responseText);
+      } catch (parseError) {
+        console.error('❌ JSON Parse Error:', parseError);
+        console.log('Raw response was:', responseText);
+        throw new Error('Invalid JSON response from myGEKKO API');
+      }
+      
+      console.log('📋 Parsed alarm data:', data);
       
       // Transform myGEKKO alarm data to our format
       const transformedAlarms = transformMyGekkoAlarms(data);
@@ -80,21 +92,41 @@ export function SystemAlarmsMonitor() {
 
   // Transform myGEKKO alarm data to our component format
   const transformMyGekkoAlarms = (data: any): MyGekkoAlarm[] => {
-    if (!data || !data.alarms) {
-      console.log('⚠️ No alarm data found in response');
+    console.log('🔍 Raw myGEKKO alarm response:', JSON.stringify(data, null, 2));
+    
+    // Handle different possible response structures
+    let alarmArray = [];
+    
+    if (data.alarms && Array.isArray(data.alarms)) {
+      alarmArray = data.alarms;
+    } else if (data.items && Array.isArray(data.items)) {
+      alarmArray = data.items;
+    } else if (data.list && Array.isArray(data.list)) {
+      alarmArray = data.list;
+    } else if (Array.isArray(data)) {
+      alarmArray = data;
+    } else {
+      console.log('⚠️ Unexpected alarm data structure:', data);
       return [];
     }
 
-    return data.alarms.map((alarm: any, index: number) => ({
-      id: alarm.id || `alarm_${index}`,
-      timestamp: alarm.timestamp || alarm.date || new Date().toISOString(),
-      status: alarm.status || (alarm.acknowledged ? 'acknowledged' : 'active'),
-      description: alarm.text || alarm.description || 'System alarm',
-      category: alarm.category || alarm.type || 'system',
-      priority: alarm.priority || alarm.severity || 'medium',
-      acknowledged: alarm.acknowledged || false,
-      resolved: alarm.resolved || alarm.status === 'resolved'
-    }));
+    console.log(`📊 Found ${alarmArray.length} alarms in response`);
+    
+    return alarmArray.map((alarm: any, index: number) => {
+      const transformedAlarm = {
+        id: alarm.id || alarm.alarmId || `alarm_${index}`,
+        timestamp: alarm.timestamp || alarm.alarmTime || alarm.date || new Date().toISOString(),
+        status: alarm.status || (alarm.okTime ? 'resolved' : 'active'),
+        description: alarm.text || alarm.description || alarm.message || `Alarm ${index + 1}`,
+        category: alarm.category || alarm.type || alarm.group || 'system',
+        priority: alarm.priority || alarm.severity || alarm.level || 'medium',
+        acknowledged: alarm.acknowledged || !!alarm.okTime || false,
+        resolved: alarm.resolved || !!alarm.okTime || false
+      };
+      
+      console.log(`🔄 Transformed alarm ${index}:`, transformedAlarm);
+      return transformedAlarm;
+    });
   };
 
   const getAlarmIcon = (category: string) => {
@@ -179,6 +211,15 @@ export function SystemAlarmsMonitor() {
             </CardDescription>
           </div>
           <div className="flex gap-2">
+            <Button
+              onClick={fetchAlarms}
+              disabled={isLoading}
+              variant="outline"
+              size="sm"
+            >
+              <RefreshCw className={`w-4 h-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
             <Badge variant={activeAlarms.length > 0 ? 'destructive' : 'secondary'}>
               {activeAlarms.length} Active
             </Badge>
