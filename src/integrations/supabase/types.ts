@@ -467,6 +467,36 @@ export type Database = {
         }
         Relationships: []
       }
+      user_dashboard_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          layout_name: string
+          updated_at: string
+          user_id: string
+          widgets: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout_name?: string
+          updated_at?: string
+          user_id: string
+          widgets?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout_name?: string
+          updated_at?: string
+          user_id?: string
+          widgets?: Json
+        }
+        Relationships: []
+      }
       user_service_installations: {
         Row: {
           config: Json | null

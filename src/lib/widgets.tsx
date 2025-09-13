@@ -226,45 +226,51 @@ export const DEFAULT_DASHBOARD_LAYOUT: WidgetConfig[] = [
     order: 2
   },
   {
-    ...AVAILABLE_WIDGETS[9], // AI Insights Small
+    ...AVAILABLE_WIDGETS.find(w => w.id === 'ai-insights-small')!, // AI Insights Small
     enabled: true,
     position: { x: 2, y: 0 },
     order: 3
   },
   {
-    ...AVAILABLE_WIDGETS[6], // Building Info Small
+    ...AVAILABLE_WIDGETS.find(w => w.id === 'building-info-small')!, // Building Info Small
     enabled: true,
     position: { x: 3, y: 0 },
     order: 4
   },
   {
-    ...AVAILABLE_WIDGETS[4], // System Alarms
+    ...AVAILABLE_WIDGETS.find(w => w.id === 'weather-small')!, // Weather Small
     enabled: true,
     position: { x: 0, y: 1 },
     order: 5
   },
   {
-    ...AVAILABLE_WIDGETS[11], // Energy Forecast Small
+    ...AVAILABLE_WIDGETS.find(w => w.id === 'energy-forecast-small')!, // Energy Forecast Small
     enabled: true,
     position: { x: 1, y: 1 },
     order: 6
   }
 ];
 
-// Helper function to check if widget should be visible based on available data
+// Helper function to check if widget should be visible based on available data  
 export function shouldShowWidget(widget: WidgetConfig, availableData: Record<string, any>): boolean {
+  // Always show widgets that don't require specific data
   if (!widget.requiredData || widget.requiredData.length === 0) {
-    return true; // No requirements, always show
+    return true;
   }
 
-  // Check if any of the required data keys exist and have meaningful values
-  return widget.requiredData.some(dataKey => {
+  // For widgets with data requirements, be more lenient - show if ANY data exists or if we're in demo mode
+  const hasAnyData = widget.requiredData.some(dataKey => {
     const value = availableData[dataKey];
     if (value === null || value === undefined) return false;
     if (typeof value === 'object' && Object.keys(value).length === 0) return false;
     if (Array.isArray(value) && value.length === 0) return false;
     return true;
   });
+
+  // Show widget if we have data OR if we're showing demo data (fallback)
+  const hasDemoData = availableData.building?.gekkoId === 'K999-7UOZ-8ZYZ-6TH3'; // Demo identifier
+  
+  return hasAnyData || hasDemoData;
 }
 
 // Helper to get grid class based on widget size

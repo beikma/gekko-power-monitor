@@ -1,10 +1,11 @@
-import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { WidgetConfig } from "@/types/widget";
 import { AVAILABLE_WIDGETS, WIDGET_CATEGORIES, shouldShowWidget } from "@/lib/widgets";
 
@@ -24,6 +25,13 @@ export function WidgetSelector({
   onSave 
 }: WidgetSelectorProps) {
   const [selectedWidgets, setSelectedWidgets] = useState<WidgetConfig[]>(currentWidgets);
+
+  // Sync with currentWidgets when dialog opens
+  useEffect(() => {
+    if (open) {
+      setSelectedWidgets(currentWidgets);
+    }
+  }, [open, currentWidgets]);
 
   const handleToggleWidget = (widgetId: string, enabled: boolean) => {
     setSelectedWidgets(prev => {
@@ -61,25 +69,28 @@ export function WidgetSelector({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+      <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle>Customize Your Dashboard</DialogTitle>
+          <DialogDescription>
+            Choose which widgets to display on your smart home dashboard
+          </DialogDescription>
         </DialogHeader>
         
         <Tabs defaultValue={WIDGET_CATEGORIES[0].id} className="h-full">
-          <TabsList className="grid grid-cols-6 w-full">
+          <TabsList className="grid grid-cols-6 w-full mb-4">
             {WIDGET_CATEGORIES.map((category) => (
-              <TabsTrigger key={category.id} value={category.id} className="text-xs">
+              <TabsTrigger key={category.id} value={category.id} className="text-xs px-2">
                 <category.icon className="h-3 w-3 mr-1" />
-                {category.title.split(' ')[0]}
+                <span className="hidden sm:inline">{category.title.split(' ')[0]}</span>
               </TabsTrigger>
             ))}
           </TabsList>
           
-          <div className="mt-4 overflow-y-auto max-h-96">
+          <ScrollArea className="h-[400px] pr-4">
             {WIDGET_CATEGORIES.map((category) => (
-              <TabsContent key={category.id} value={category.id} className="space-y-4">
-                <div>
+              <TabsContent key={category.id} value={category.id} className="mt-0 space-y-4">
+                <div className="border-b pb-2">
                   <h3 className="font-semibold text-lg">{category.title}</h3>
                   <p className="text-sm text-muted-foreground">{category.description}</p>
                 </div>
@@ -91,35 +102,34 @@ export function WidgetSelector({
                       const { isEnabled, isAvailable } = getWidgetStatus(widget);
                       
                       return (
-                        <Card key={widget.id} className={`transition-opacity ${!isAvailable ? 'opacity-60' : ''}`}>
+                        <Card key={widget.id} className={`transition-all duration-200 hover:shadow-md ${isEnabled ? 'border-primary bg-primary/5' : ''} ${!isAvailable ? 'opacity-60' : ''}`}>
                           <CardHeader className="pb-3">
                             <div className="flex items-center justify-between">
                               <CardTitle className="text-base">{widget.title}</CardTitle>
                               <div className="flex items-center gap-2">
                                 {!isAvailable && (
                                   <Badge variant="outline" className="text-xs">
-                                    No Data
+                                    Limited Data
                                   </Badge>
                                 )}
-                                <Badge variant="secondary" className="text-xs">
+                                <Badge variant="secondary" className="text-xs capitalize">
                                   {widget.size}
                                 </Badge>
                                 <Switch
                                   checked={isEnabled}
                                   onCheckedChange={(enabled) => handleToggleWidget(widget.id, enabled)}
-                                  disabled={!isAvailable}
                                 />
                               </div>
                             </div>
                           </CardHeader>
                           <CardContent className="pt-0">
-                            <p className="text-sm text-muted-foreground">
+                            <p className="text-sm text-muted-foreground mb-2">
                               {widget.description}
                             </p>
                             {widget.requiredData && widget.requiredData.length > 0 && (
                               <div className="mt-2">
                                 <p className="text-xs text-muted-foreground">
-                                  Requires: {widget.requiredData.join(', ')}
+                                  Data: {widget.requiredData.join(', ')}
                                 </p>
                               </div>
                             )}
@@ -130,10 +140,10 @@ export function WidgetSelector({
                 </div>
               </TabsContent>
             ))}
-          </div>
+          </ScrollArea>
         </Tabs>
         
-        <div className="flex justify-between items-center pt-4 border-t">
+        <div className="flex justify-between items-center pt-4 border-t bg-background">
           <p className="text-sm text-muted-foreground">
             {selectedWidgets.filter(w => w.enabled).length} widgets enabled
           </p>
@@ -142,7 +152,7 @@ export function WidgetSelector({
               Cancel
             </Button>
             <Button onClick={handleSave}>
-              Save Changes
+              Save Dashboard
             </Button>
           </div>
         </div>

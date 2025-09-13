@@ -2,10 +2,11 @@ import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Settings, LayoutGrid } from "lucide-react";
+import { Plus, Settings, LayoutGrid, RefreshCw } from "lucide-react";
 import { WidgetConfig } from "@/types/widget";
-import { DEFAULT_DASHBOARD_LAYOUT, shouldShowWidget, getWidgetGridClass } from "@/lib/widgets";
+import { shouldShowWidget, getWidgetGridClass } from "@/lib/widgets";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
+import { useDashboardLayout } from "@/hooks/useDashboardLayout";
 import { WidgetSelector } from "./WidgetSelector";
 
 interface WidgetDashboardProps {
@@ -14,30 +15,11 @@ interface WidgetDashboardProps {
 
 export function WidgetDashboard({ onOpenSettings }: WidgetDashboardProps) {
   const { data, status, isLoading, connectionStatus } = useGekkoApi({ refreshInterval: 30000 });
-  const [userWidgets, setUserWidgets] = useState<WidgetConfig[]>(DEFAULT_DASHBOARD_LAYOUT);
+  const { currentLayout, isLoading: layoutLoading, saveLayout, resetToDefault } = useDashboardLayout();
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
 
-  // Load user's widget configuration from localStorage
-  useEffect(() => {
-    const savedLayout = localStorage.getItem('dashboard-layout');
-    if (savedLayout) {
-      try {
-        const parsed = JSON.parse(savedLayout);
-        setUserWidgets(parsed);
-      } catch (error) {
-        console.error('Failed to load dashboard layout:', error);
-      }
-    }
-  }, []);
-
-  // Save widget configuration to localStorage
-  const saveLayout = (widgets: WidgetConfig[]) => {
-    localStorage.setItem('dashboard-layout', JSON.stringify(widgets));
-    setUserWidgets(widgets);
-  };
-
   // Filter widgets based on available data and enabled status
-  const visibleWidgets = userWidgets.filter(widget => 
+  const visibleWidgets = currentLayout.filter(widget => 
     widget.enabled && shouldShowWidget(widget, { ...data, ...status })
   );
 
@@ -87,7 +69,7 @@ export function WidgetDashboard({ onOpenSettings }: WidgetDashboardProps) {
     alarms: status?.alarms || []
   };
 
-  if (isLoading && visibleWidgets.length === 0) {
+  if ((isLoading || layoutLoading) && visibleWidgets.length === 0) {
     return (
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -132,6 +114,15 @@ export function WidgetDashboard({ onOpenSettings }: WidgetDashboardProps) {
           >
             <Plus className="h-4 w-4" />
             Add Widget
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={resetToDefault}
+            className="gap-2"
+          >
+            <RefreshCw className="h-4 w-4" />
+            Reset
           </Button>
           {onOpenSettings && (
             <Button 
@@ -189,7 +180,7 @@ export function WidgetDashboard({ onOpenSettings }: WidgetDashboardProps) {
       <WidgetSelector
         open={showWidgetSelector}
         onOpenChange={setShowWidgetSelector}
-        currentWidgets={userWidgets}
+        currentWidgets={currentLayout}
         availableData={widgetData}
         onSave={saveLayout}
       />
