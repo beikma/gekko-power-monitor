@@ -42,5 +42,5 @@ verify_jwt = false
 [functions.gekko-multi-import]
 verify_jwt = false
 
-[functions.energy-ai-advanced]
+[functions.open-meteo-weather]
 verify_jwt = false

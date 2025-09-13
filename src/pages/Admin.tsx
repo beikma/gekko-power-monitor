@@ -5,6 +5,7 @@ import { SolarForecastCard } from '@/components/SolarForecastCard';
 import { DirectLightControl } from '@/components/DirectLightControl';
 import { MCPTestPanel } from '@/components/MCPTestPanel';
 import { OpenMeteoTestCard } from '@/components/OpenMeteoTestCard';
+import { OpenMeteoDirectTest } from '@/components/OpenMeteoDirectTest';
 
 export default function Admin() {
   return (
@@ -23,6 +24,8 @@ export default function Admin() {
           <MCPTestPanel />
           <OpenMeteoTestCard />
         </div>
+        
+        <OpenMeteoDirectTest />
         
         <ForecastCard />
         
