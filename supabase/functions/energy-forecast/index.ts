@@ -17,6 +17,7 @@ interface ForecastResponse {
   success: boolean;
   historical: HistoricalPoint[];
   forecast: ForecastPoint[];
+  backtest?: BacktestResult;
   model_info: {
     training_samples: number;
     forecast_horizon_hours: number;
@@ -25,6 +26,18 @@ interface ForecastResponse {
     algorithm: string;
   };
   error?: string;
+}
+
+interface BacktestResult {
+  backtest_date: string;
+  forecast_points: ForecastPoint[];
+  actual_points: HistoricalPoint[];
+  accuracy_metrics: {
+    mape: number; // Mean Absolute Percentage Error
+    rmse: number; // Root Mean Square Error
+    mae: number;  // Mean Absolute Error
+    accuracy_score: number; // Overall accuracy percentage
+  };
 }
 
 // Simple time series forecasting using trend analysis and seasonality
@@ -151,7 +164,53 @@ class SimpleForecast {
   }
 }
 
-// Generate synthetic energy data for demo
+// Calculate accuracy metrics for backtesting
+function calculateAccuracyMetrics(
+  forecast: ForecastPoint[], 
+  actual: HistoricalPoint[]
+): { mape: number; rmse: number; mae: number; accuracy_score: number } {
+  if (forecast.length === 0 || actual.length === 0) {
+    return { mape: 100, rmse: 0, mae: 0, accuracy_score: 0 };
+  }
+
+  let totalAbsoluteError = 0;
+  let totalSquaredError = 0;
+  let totalPercentageError = 0;
+  let validComparisons = 0;
+
+  // Match forecast points with actual points by timestamp
+  forecast.forEach(fPoint => {
+    const matchingActual = actual.find(aPoint => 
+      Math.abs(new Date(fPoint.timestamp).getTime() - new Date(aPoint.timestamp).getTime()) < 60 * 60 * 1000 // Within 1 hour
+    );
+    
+    if (matchingActual && matchingActual.actual > 0) {
+      const error = Math.abs(fPoint.predicted - matchingActual.actual);
+      const percentError = (error / matchingActual.actual) * 100;
+      
+      totalAbsoluteError += error;
+      totalSquaredError += error * error;
+      totalPercentageError += percentError;
+      validComparisons++;
+    }
+  });
+
+  if (validComparisons === 0) {
+    return { mape: 100, rmse: 0, mae: 0, accuracy_score: 0 };
+  }
+
+  const mape = totalPercentageError / validComparisons;
+  const mae = totalAbsoluteError / validComparisons;
+  const rmse = Math.sqrt(totalSquaredError / validComparisons);
+  const accuracy_score = Math.max(0, 100 - mape);
+
+  return {
+    mape: Math.round(mape * 100) / 100,
+    rmse: Math.round(rmse * 100) / 100,
+    mae: Math.round(mae * 100) / 100,
+    accuracy_score: Math.round(accuracy_score * 100) / 100
+  };
+}
 function generateSyntheticData(): { timestamp: Date; value: number }[] {
   const data: { timestamp: Date; value: number }[] = [];
   const endDate = new Date();
@@ -206,8 +265,20 @@ serve(async (req) => {
     const url = new URL(req.url);
     const useLiveData = url.searchParams.get('live') === 'true';
     const forecastHours = parseInt(url.searchParams.get('hours') || '48');
+    const backtestMode = url.searchParams.get('backtest') === 'true';
+    const backtestDaysAgo = parseInt(url.searchParams.get('backtest_days') || '3');
     
-    console.log(`Generating forecast for ${forecastHours} hours (live: ${useLiveData})`);
+    console.log(`Generating forecast for ${forecastHours} hours (live: ${useLiveData}, backtest: ${backtestMode})`);
+
+    let backtestResult: BacktestResult | undefined;
+    let backtestDate: Date | undefined;
+    
+    if (backtestMode) {
+      backtestDate = new Date();
+      backtestDate.setDate(backtestDate.getDate() - backtestDaysAgo);
+      backtestDate.setHours(backtestDate.getHours(), 0, 0, 0); // Round to hour
+      console.log(`Backtesting from: ${backtestDate.toISOString()}`);
+    }
     
     // Generate or fetch data
     let data: { timestamp: Date; value: number }[];
@@ -253,6 +324,67 @@ serve(async (req) => {
       data = generateSyntheticData();
     }
     
+    // Perform backtesting if requested
+    if (backtestMode && backtestDate && useLiveData) {
+      try {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
+        const supabaseUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheXR0d21tZGN1YmZqcXJwenR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2NzQ3MzcsImV4cCI6MjA3MzI1MDczN30.40c-xV4k_w8k5TX7xtWUBOn2MU1yif6FzfYDE5e3tNI';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Get training data up to the backtest date
+        const thirtyDaysBeforeBacktest = new Date(backtestDate.getTime() - 30 * 24 * 60 * 60 * 1000);
+        
+        const { data: trainingData, error: trainingError } = await supabase
+          .from('energy_readings')
+          .select('recorded_at, current_power')
+          .gte('recorded_at', thirtyDaysBeforeBacktest.toISOString())
+          .lt('recorded_at', backtestDate.toISOString())
+          .order('recorded_at', { ascending: true });
+        
+        if (!trainingError && trainingData && trainingData.length > 0) {
+          // Create model with historical data up to backtest date
+          const backtestTrainingData = trainingData.map(record => ({
+            timestamp: new Date(record.recorded_at),
+            value: parseFloat(record.current_power) || 0
+          }));
+          
+          const backtestForecaster = new SimpleForecast(backtestTrainingData);
+          const backtestForecast = backtestForecaster.predict(forecastHours);
+          
+          // Get actual data for the forecast period to compare against
+          const forecastEndDate = new Date(backtestDate.getTime() + forecastHours * 60 * 60 * 1000);
+          
+          const { data: actualData, error: actualError } = await supabase
+            .from('energy_readings')
+            .select('recorded_at, current_power')
+            .gte('recorded_at', backtestDate.toISOString())
+            .lte('recorded_at', forecastEndDate.toISOString())
+            .order('recorded_at', { ascending: true });
+          
+          if (!actualError && actualData && actualData.length > 0) {
+            const actualPoints: HistoricalPoint[] = actualData.map(record => ({
+              timestamp: record.recorded_at,
+              actual: parseFloat(record.current_power) || 0
+            }));
+            
+            const accuracyMetrics = calculateAccuracyMetrics(backtestForecast, actualPoints);
+            
+            backtestResult = {
+              backtest_date: backtestDate.toISOString(),
+              forecast_points: backtestForecast,
+              actual_points: actualPoints,
+              accuracy_metrics: accuracyMetrics
+            };
+            
+            console.log(`Backtest completed - MAPE: ${accuracyMetrics.mape}%, Accuracy: ${accuracyMetrics.accuracy_score}%`);
+          }
+        }
+      } catch (backtestError) {
+        console.error('Backtesting failed:', backtestError);
+      }
+    }
+    
     // Create forecasting model
     const forecaster = new SimpleForecast(data);
     
@@ -274,6 +406,7 @@ serve(async (req) => {
       success: true,
       historical,
       forecast,
+      backtest: backtestResult,
       model_info: {
         training_samples: data.length,
         forecast_horizon_hours: forecastHours,

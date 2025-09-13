@@ -23,7 +23,8 @@ import {
   Zap, 
   RefreshCw, 
   AlertCircle,
-  Brain
+  Brain,
+  BarChart3
 } from 'lucide-react';
 import { useForecast } from '@/hooks/useForecast';
 import { cn } from '@/lib/utils';
@@ -88,6 +89,10 @@ export function ForecastCard({ className }: ForecastCardProps) {
 
   const handleRunDemoForecast = () => {
     runForecast({ useLiveData: false, forecastHours: 48 });
+  };
+
+  const handleRunBacktest = () => {
+    runForecast({ useLiveData: true, forecastHours: 48, enableBacktest: true, backtestDaysAgo: 3 });
   };
 
   // Calculate stats
@@ -173,6 +178,16 @@ export function ForecastCard({ className }: ForecastCardProps) {
             >
               <TrendingUp className="h-4 w-4 mr-2" />
               Demo Data
+            </Button>
+            
+            <Button 
+              onClick={handleRunBacktest}
+              disabled={isLoading}
+              size="sm"
+              variant="secondary"
+            >
+              <BarChart3 className="h-4 w-4 mr-2" />
+              Backtest
             </Button>
           </div>
         </div>
@@ -316,6 +331,55 @@ export function ForecastCard({ className }: ForecastCardProps) {
                 />
               </ComposedChart>
             </ResponsiveContainer>
+          </div>
+        )}
+
+        {/* Backtest Results */}
+        {data?.backtest && (
+          <div className="border-t pt-4">
+            <div className="flex items-center gap-2 mb-3">
+              <BarChart3 className="h-4 w-4 text-primary" />
+              <h4 className="font-medium">Backtest Results</h4>
+              <Badge variant="secondary" className="text-xs">
+                {new Date(data.backtest.backtest_date).toLocaleDateString()}
+              </Badge>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-3">
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-semibold text-green-600">
+                  {data.backtest.accuracy_metrics.accuracy_score}%
+                </div>
+                <div className="text-xs text-muted-foreground">Accuracy</div>
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-semibold">
+                  {data.backtest.accuracy_metrics.mape}%
+                </div>
+                <div className="text-xs text-muted-foreground">MAPE</div>
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-semibold">
+                  {data.backtest.accuracy_metrics.mae}
+                </div>
+                <div className="text-xs text-muted-foreground">MAE</div>
+              </div>
+              
+              <div className="bg-muted/50 rounded-lg p-3 text-center">
+                <div className="text-lg font-semibold">
+                  {data.backtest.accuracy_metrics.rmse}
+                </div>
+                <div className="text-xs text-muted-foreground">RMSE</div>
+              </div>
+            </div>
+            
+            <p className="text-xs text-muted-foreground">
+              Model trained on data up to {new Date(data.backtest.backtest_date).toLocaleDateString()}, 
+              then predicted {data.backtest.forecast_points.length} hours ahead. 
+              Compared against {data.backtest.actual_points.length} actual readings.
+            </p>
           </div>
         )}
 

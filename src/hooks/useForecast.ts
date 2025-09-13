@@ -13,10 +13,23 @@ export interface HistoricalPoint {
   actual: number;
 }
 
+export interface BacktestResult {
+  backtest_date: string;
+  forecast_points: ForecastPoint[];
+  actual_points: HistoricalPoint[];
+  accuracy_metrics: {
+    mape: number;
+    rmse: number;
+    mae: number;
+    accuracy_score: number;
+  };
+}
+
 export interface ForecastData {
   success: boolean;
   historical: HistoricalPoint[];
   forecast: ForecastPoint[];
+  backtest?: BacktestResult;
   model_info: {
     training_samples: number;
     forecast_horizon_hours: number;
@@ -35,7 +48,9 @@ export function useForecast() {
 
   const runForecast = useCallback(async (options: { 
     useLiveData?: boolean; 
-    forecastHours?: number 
+    forecastHours?: number;
+    enableBacktest?: boolean;
+    backtestDaysAgo?: number;
   } = {}) => {
     setIsLoading(true);
     setError(null);
@@ -47,6 +62,8 @@ export function useForecast() {
       const params = new URLSearchParams();
       if (options.useLiveData) params.append('live', 'true');
       if (options.forecastHours) params.append('hours', options.forecastHours.toString());
+      if (options.enableBacktest) params.append('backtest', 'true');
+      if (options.backtestDaysAgo) params.append('backtest_days', options.backtestDaysAgo.toString());
       
       // For GET requests with query params, we need to call the function URL directly
       const functionUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/energy-forecast?${params.toString()}`;
