@@ -42,5 +42,8 @@ verify_jwt = false
 [functions.gekko-multi-import]
 verify_jwt = false
 
+[functions.prophet-forecast]
+verify_jwt = false
+
 [functions.open-meteo-weather]
 verify_jwt = false

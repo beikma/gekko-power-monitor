@@ -6,6 +6,7 @@ import { DirectLightControl } from '@/components/DirectLightControl';
 import { MCPTestPanel } from '@/components/MCPTestPanel';
 import { OpenMeteoTestCard } from '@/components/OpenMeteoTestCard';
 import { OpenMeteoDirectTest } from '@/components/OpenMeteoDirectTest';
+import { ProphetForecastCard } from '@/components/ProphetForecastCard';
 
 export default function Admin() {
   return (
@@ -26,6 +27,8 @@ export default function Admin() {
         </div>
         
         <OpenMeteoDirectTest />
+        
+        <ProphetForecastCard />
         
         <ForecastCard />
         
