@@ -46,52 +46,61 @@ serve(async (req) => {
     // Handle different command formats - USE POST for command execution
     if (endpoint.includes('lights/') && endpoint.includes('/scmd') && value !== null) {
       // Direct light commands (e.g., lights/item0/scmd) - USE POST to actually execute
-      gekkoUrl = `https://live.my-gekko.com/api/v1/var/${endpoint}?${gekkoParams}`;
+      gekkoUrl = `https://live.my-gekko.com/api/v1/var/${endpoint}`;
+      gekkoParams.append('value', value);
       requestOptions.method = 'POST';
       requestOptions.headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      requestOptions.body = `value=${value}`;
+      requestOptions.body = gekkoParams.toString();
     } else if (endpoint.includes('/set') && value !== null) {
       // Individual socket/load commands with /set endpoint - USE POST
-      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}`;
+      gekkoParams.append('value', value);
       requestOptions.method = 'POST';
       requestOptions.headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      requestOptions.body = `value=${value}`;
+      requestOptions.body = gekkoParams.toString();
     } else if (endpoint.includes('/scmd') && value !== null) {
       // Individual commands with /scmd endpoint - USE POST
-      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}`;
+      gekkoParams.append('value', value);
       requestOptions.method = 'POST';
       requestOptions.headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      requestOptions.body = `value=${value}`;
+      requestOptions.body = gekkoParams.toString();
     } else if (endpoint === 'scmd' && index && value !== null) {
       // Direct scmd endpoint with index - USE POST
-      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}`;
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
       requestOptions.method = 'POST';
       requestOptions.headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      requestOptions.body = `index=${index}&value=${value}`;
+      requestOptions.body = gekkoParams.toString();
     } else if (endpoint === 'var/scmd' && index && value !== null) {
       // var/scmd with index parameter - USE POST
-      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}`;
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
       requestOptions.method = 'POST';
       requestOptions.headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      requestOptions.body = `index=${index}&value=${value}`;
+      requestOptions.body = gekkoParams.toString();
     } else if (endpoint === 'var' && index && value !== null) {
       // Direct var endpoint with index and value - USE POST
-      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}`;
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
       requestOptions.method = 'POST';
       requestOptions.headers = {
         'Content-Type': 'application/x-www-form-urlencoded',
       };
-      requestOptions.body = `index=${index}&value=${value}`;
+      requestOptions.body = gekkoParams.toString();
     } else {
       // For regular GET requests (status, info, etc.)
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
@@ -99,6 +108,7 @@ serve(async (req) => {
     }
     
     console.log(`Proxying ${req.method} request to: ${gekkoUrl}`);
+    console.log(`Request method: ${requestOptions.method}, Body: ${requestOptions.body || 'none'}`);
 
     // Make the request to myGEKKO API
     const response = await fetch(gekkoUrl, requestOptions);
