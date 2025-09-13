@@ -3,6 +3,7 @@ import { GarageSocketController } from '@/components/GarageSocketController';
 import { ApiCommunicationTracker } from '@/components/ApiCommunicationTracker';
 import { MyGekkoApiTester } from '@/components/MyGekkoApiTester';
 import { SocketAnalyzer } from '@/components/SocketAnalyzer';
+import { MyGekkoDebugger } from '@/components/MyGekkoDebugger';
 
 export default function GarageSocket() {
   return (
@@ -15,6 +16,8 @@ export default function GarageSocket() {
       </div>
       
       <div className="space-y-6">
+        <MyGekkoDebugger />
+        
         <SocketAnalyzer />
         
         <GarageSocketController />
