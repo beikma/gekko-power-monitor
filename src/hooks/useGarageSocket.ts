@@ -108,26 +108,20 @@ export function useGarageSocket() {
     });
     
     try {
-      // Use direct command approach for lights  
+      // Use correct myGEKKO API format: /scmd/set with GET request  
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
       const value = newState ? '1' : '0'; // For lights: 1 = On, 0 = Off
       
       const cmdParams = new URLSearchParams({
-        endpoint: `lights/${socket.id}/scmd`,
+        endpoint: `lights/${socket.id}/scmd/set`,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
         value: value
       });
 
-      console.log(`🚀 Direct POST command to lights/${socket.id}/scmd with value=${value}`);
-      const response = await fetch(`${proxyUrl}?${cmdParams}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `value=${value}`
-      });
+      console.log(`🚀 Correct API call to lights/${socket.id}/scmd/set with value=${value}`);
+      const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
       

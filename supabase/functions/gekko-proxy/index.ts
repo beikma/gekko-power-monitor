@@ -43,55 +43,40 @@ serve(async (req) => {
       method: req.method,
     };
 
-    // Handle different command formats - USE POST for command execution
-    if (endpoint.includes('lights/') && endpoint.includes('/scmd') && value !== null) {
-      // Direct light commands (e.g., lights/item0/scmd) - Keep auth in URL, value in body
+    // Handle command execution - use correct /scmd/set endpoint
+    if (endpoint.includes('/scmd/set') && value !== null) {
+      // Command execution endpoint - use GET with value parameter
+      gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/var/${endpoint}?${gekkoParams}`;
-      requestOptions.method = 'POST';
-      requestOptions.headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      };
-      requestOptions.body = `value=${value}`;
+      requestOptions.method = 'GET';
+    } else if (endpoint.includes('lights/') && endpoint.includes('/scmd') && value !== null) {
+      // Legacy direct light commands (for backward compatibility)
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/var/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
     } else if (endpoint.includes('/set') && value !== null) {
       // Individual socket/load commands with /set endpoint
+      gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
-      requestOptions.method = 'POST';
-      requestOptions.headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      };
-      requestOptions.body = `value=${value}`;
-    } else if (endpoint.includes('/scmd') && value !== null) {
-      // Individual commands with /scmd endpoint
-      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
-      requestOptions.method = 'POST';
-      requestOptions.headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      };
-      requestOptions.body = `value=${value}`;
+      requestOptions.method = 'GET';
     } else if (endpoint === 'scmd' && index && value !== null) {
       // Direct scmd endpoint with index
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
-      requestOptions.method = 'POST';
-      requestOptions.headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      };
-      requestOptions.body = `index=${index}&value=${value}`;
+      requestOptions.method = 'GET';
     } else if (endpoint === 'var/scmd' && index && value !== null) {
       // var/scmd with index parameter
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
-      requestOptions.method = 'POST';
-      requestOptions.headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      };
-      requestOptions.body = `index=${index}&value=${value}`;
+      requestOptions.method = 'GET';
     } else if (endpoint === 'var' && index && value !== null) {
       // Direct var endpoint with index and value
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
-      requestOptions.method = 'POST';
-      requestOptions.headers = {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      };
-      requestOptions.body = `index=${index}&value=${value}`;
+      requestOptions.method = 'GET';
     } else {
       // For regular GET requests (status, info, etc.)
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;

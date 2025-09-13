@@ -87,24 +87,18 @@ export function SocketAnalyzer() {
     try {
       const value = command === 'on' ? '1' : '0'; // For lights: 1 = On, 0 = Off
       
-      // Use direct command approach - bypass the index lookup
+      // Use correct myGEKKO API format: /scmd/set with GET request
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
       const cmdParams = new URLSearchParams({
-        endpoint: `lights/${socketId}/scmd`,
+        endpoint: `lights/${socketId}/scmd/set`,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
         value: value
       });
 
-      console.log(`🚀 Direct POST command to lights/${socketId}/scmd with value=${value}`);
-      const response = await fetch(`${proxyUrl}?${cmdParams}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-        },
-        body: `value=${value}`
-      });
+      console.log(`🚀 Correct API call to lights/${socketId}/scmd/set with value=${value}`);
+      const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       
       console.log(`📡 API Response → ${response.status}: ${responseText}`);
