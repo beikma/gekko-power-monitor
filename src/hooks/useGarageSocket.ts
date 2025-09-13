@@ -108,35 +108,41 @@ export function useGarageSocket() {
     });
     
     try {
-      // Step 1: Get command index for the socket
+      // Get command indices from the lights section (some devices may be there)
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
       const infoParams = new URLSearchParams({
-        endpoint: `var/${socket.id}/scmd`,
+        endpoint: 'var',
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
       });
 
-      console.log(`🔍 Getting command info for ${socket.id}...`);
+      console.log(`🔍 Getting API data for ${socket.id}...`);
       const infoResponse = await fetch(`${proxyUrl}?${infoParams}`);
-      const infoData = await infoResponse.json();
+      const apiData = await infoResponse.json();
       
-      if (!infoResponse.ok || !infoData.index) {
-        throw new Error(`Failed to get command index for ${socket.id}`);
+      if (!infoResponse.ok) {
+        throw new Error(`Failed to get API data`);
       }
 
-      // Step 2: Execute command using index-based approach
-      const value = newState ? '2' : '0'; // 2 = OnPermanent, 0 = Off
+      // Look for the socket in lights section
+      const lightItem = apiData.lights?.[socket.id];
+      if (!lightItem?.scmd?.index) {
+        throw new Error(`No command index found for ${socket.id} - may not be controllable`);
+      }
+
+      // Execute command using the lights command index
+      const value = newState ? '1' : '0'; // For lights: 1 = On, 0 = Off
       const cmdParams = new URLSearchParams({
         endpoint: 'var/scmd',
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        index: infoData.index,
+        index: lightItem.scmd.index,
         value: value
       });
 
-      console.log(`🚀 Executing: index=${infoData.index}, value=${value}`);
+      console.log(`🚀 Executing: index=${lightItem.scmd.index}, value=${value}`);
       const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
@@ -214,54 +220,50 @@ export function useGarageSocket() {
 }
 
 function findGarageSocket(gekkoData: any): { id: string; name: string; location: string } | null {
-  console.log('🔍 Searching for garage socket in myGEKKO data:', gekkoData);
+  console.log('🔍 Searching for controllable garage socket in myGEKKO data:', gekkoData);
   
-  // Look through different categories for garage devices - including loads which are power sockets
-  const categories = ['loads', 'devices', 'sockets', 'blinds', 'heating', 'lights'];
-  
-  for (const category of categories) {
-    const categoryData = gekkoData[category];
-    console.log(`🔍 Checking category: ${category}`, categoryData);
-    
-    if (categoryData && typeof categoryData === 'object') {
-      for (const [itemKey, itemData] of Object.entries(categoryData)) {
-        const item = itemData as any;
-        console.log(`🔍 Checking item ${itemKey}:`, item);
+  // First priority: Look in lights section for controllable items
+  if (gekkoData.lights && typeof gekkoData.lights === 'object') {
+    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
+      const item = itemData as any;
+      console.log(`🔍 Checking lights/${itemKey}:`, item);
+      
+      // Look for items that could be sockets/outlets
+      if (item.name && item.page && item.scmd?.index) {
+        const name = item.name.toLowerCase();
+        const page = item.page.toLowerCase();
         
-        // For loads category, items don't have names/pages, so we'll use specific items
-        if (category === 'loads') {
-          // Look for active load items (value "1;0;" or "2;0;" indicates active loads)
-          if (item.sumstate?.value && (item.sumstate.value.startsWith('1;') || item.sumstate.value.startsWith('2;'))) {
-            // Try item6, item9, item15 as they show as active in the data
-            if (itemKey === 'item6' || itemKey === 'item9' || itemKey === 'item15') {
-              console.log(`✅ Found active load: ${itemKey}`);
-              return {
-                id: itemKey,
-                name: `Power Socket ${itemKey.replace('item', '')}`,
-                location: 'Garage/Utility'
-              };
-            }
-          }
-        } else if (item.name && item.page) {
-          const name = item.name.toLowerCase();
-          const page = item.page.toLowerCase();
-          
-          // Look for garage-related items
-          if (page.includes('garage') || name.includes('garage') || 
-              name.includes('steckdose') || name.includes('socket')) {
-            console.log(`✅ Found garage device: ${itemKey} - ${item.name}`);
-            return {
-              id: itemKey,
-              name: item.name,
-              location: item.page
-            };
-          }
+        // Look for garage-related items or generic outlets
+        if (page.includes('garage') || name.includes('garage') || 
+            name.includes('steckdose') || name.includes('socket') ||
+            name.includes('outlet') || name.includes('power')) {
+          console.log(`✅ Found controllable garage device: ${itemKey} - ${item.name} (index: ${item.scmd.index})`);
+          return {
+            id: itemKey,
+            name: item.name,
+            location: item.page
+          };
         }
       }
     }
   }
   
-  console.log('❌ No garage socket found');
+  // Fallback: Look for any controllable light item (some might actually be sockets)
+  if (gekkoData.lights && typeof gekkoData.lights === 'object') {
+    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
+      const item = itemData as any;
+      if (item.scmd?.index) {
+        console.log(`✅ Found controllable item as fallback: ${itemKey} - ${item.name || 'Unknown'} (index: ${item.scmd.index})`);
+        return {
+          id: itemKey,
+          name: item.name || `Controllable Device ${itemKey.replace('item', '')}`,
+          location: item.page || 'Unknown'
+        };
+      }
+    }
+  }
+  
+  console.log('❌ No controllable garage socket found');
   return null;
 }
 
