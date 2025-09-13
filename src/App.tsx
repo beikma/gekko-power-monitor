@@ -20,86 +20,88 @@ import { useGekkoApi } from "./hooks/useGekkoApi";
 
 const queryClient = new QueryClient();
 
-const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={
-            <DashboardLayout>
-              <DashboardOverview />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/energy" element={
-            <DashboardLayout>
-              <EnergyDashboard />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/lighting" element={
-            <DashboardLayout>
-              <LightingDashboard />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/climate" element={
-            <DashboardLayout>
-              <ClimateDashboard />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/security" element={
-            <DashboardLayout>
-              <SecurityDashboard />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/building" element={
-            <DashboardLayout>
-              <BuildingProfile />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/analytics" element={
-            <DashboardLayout>
-              <AnalyticsDashboard />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/import" element={
-            <DashboardLayout>
-              <BulkDataImport />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/teams" element={
-            <DashboardLayout>
-              <TeamsIntegration />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/status" element={
-            <DashboardLayout title="System Status">
-              <SystemStatusPage />
-            </DashboardLayout>
-          } />
-          
-          <Route path="/settings" element={
-            <DashboardLayout title="Settings">
-              <SettingsPage />
-            </DashboardLayout>
-          } />
+const App: React.FC = () => {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={
+              <DashboardLayout>
+                <DashboardOverview />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/energy" element={
+              <DashboardLayout>
+                <EnergyDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/lighting" element={
+              <DashboardLayout>
+                <LightingDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/climate" element={
+              <DashboardLayout>
+                <ClimateDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/security" element={
+              <DashboardLayout>
+                <SecurityDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/building" element={
+              <DashboardLayout>
+                <BuildingProfile />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/analytics" element={
+              <DashboardLayout>
+                <AnalyticsDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/import" element={
+              <DashboardLayout>
+                <BulkDataImport />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/teams" element={
+              <DashboardLayout>
+                <TeamsIntegration />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/status" element={
+              <DashboardLayout title="System Status">
+                <SystemStatusPage />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/settings" element={
+              <DashboardLayout title="Settings">
+                <SettingsPage />
+              </DashboardLayout>
+            } />
 
-          <Route path="/admin" element={<Admin />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
-);
+            <Route path="/admin" element={<Admin />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  );
+};
 
 // Wrapper components with data fetching - defined as proper React components
 const EnergyDashboard: React.FC = () => {
