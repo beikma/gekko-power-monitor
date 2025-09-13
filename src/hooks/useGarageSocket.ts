@@ -120,23 +120,24 @@ export function useGarageSocket() {
       
       const commandValue = newState ? '1' : '0';
       
-      // Try multiple endpoint variations like lights do
+      // Try multiple endpoint variations for loads/sockets  
       const endpointVariations = [
-        `var/loads/${socket.id}/scmd?value=${commandValue}`,
-        `var/loads/${socket.id}/set?value=${commandValue}`,
-        `var/loads/${socket.id}?scmd=${commandValue}`,
-        `var/${socket.id}/scmd?value=${commandValue}`,
-        `var/${socket.id}/set?value=${commandValue}`,
-        `var/${socket.id}?scmd=${commandValue}`
+        `var/loads/${socket.id}/set`,
+        `var/loads/${socket.id}/scmd`,
+        `var/${socket.id}/set`, 
+        `var/${socket.id}/scmd`
       ];
       
       let lastError: any;
-      let successMethod = '';
       
       for (const endpoint of endpointVariations) {
         try {
-          const params = new URLSearchParams(baseParams);
-          console.log(`🔄 Trying: ${proxyUrl}?endpoint=${endpoint}`);
+          const params = new URLSearchParams({
+            ...baseParams,
+            value: commandValue
+          });
+          
+          console.log(`🔄 Trying: ${proxyUrl}?endpoint=${endpoint}&${params}`);
           
           const response = await fetch(`${proxyUrl}?endpoint=${endpoint}&${params}`);
           const responseText = await response.text();
@@ -155,7 +156,6 @@ export function useGarageSocket() {
           });
           
           if (response.ok) {
-            successMethod = endpoint;
             setSocket(prev => prev ? { ...prev, isOn: newState } : null);
             console.log(`✅ Socket toggle successful via ${endpoint}`);
             return;
