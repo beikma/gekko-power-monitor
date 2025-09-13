@@ -10,7 +10,7 @@ import { Lightbulb, Palette, Gauge, Zap, Settings } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export function DirectLightControl() {
-  const { toggleLight, setLightDim, setLightColor, isLoading, error, credentials } = useDirectGekkoApi();
+  const { toggleLight, setLightDim, setLightColor, testAllEndpoints, isLoading, error, credentials } = useDirectGekkoApi();
   
   const [selectedItem, setSelectedItem] = useState('item0');
   const [lightState, setLightState] = useState(false);
@@ -62,29 +62,8 @@ export function DirectLightControl() {
   };
 
   const testApiEndpoints = async () => {
-    console.log('Testing all API endpoint variations...');
-    
-    const endpoints = [
-      `https://live.my-gekko.com/api/v1/var/lights/${selectedItem}/set?value=1&apikey=${credentials.apiKey}`,
-      `https://live.my-gekko.com/api/v1/${credentials.gekkoId}/var/lights/${selectedItem}/set?value=1&apikey=${credentials.apiKey}`,
-      `https://live.my-gekko.com/api/v1/var/lights/${selectedItem}/scmd?value=1&apikey=${credentials.apiKey}`,
-      `https://${credentials.gekkoId}.my-gekko.com/api/v1/var/lights/${selectedItem}/set?value=1&apikey=${credentials.apiKey}`,
-      `https://live.my-gekko.com/query?user=${credentials.username}&key=${credentials.apiKey}&var=lights/${selectedItem}/scmd&value=1`
-    ];
-
-    for (const [index, url] of endpoints.entries()) {
-      try {
-        console.log(`Testing endpoint ${index + 1}: ${url}`);
-        const response = await fetch(url);
-        console.log(`Endpoint ${index + 1} status:`, response.status, response.statusText);
-        if (response.ok) {
-          const text = await response.text();
-          console.log(`Endpoint ${index + 1} response:`, text);
-        }
-      } catch (err) {
-        console.error(`Endpoint ${index + 1} error:`, err);
-      }
-    }
+    const results = await testAllEndpoints(selectedItem);
+    console.log('All endpoint test results:', results);
   };
 
   return (
@@ -95,7 +74,7 @@ export function DirectLightControl() {
           Direct MyGekko Light Control
         </CardTitle>
         <CardDescription>
-          Direct REST API control using live.my-gekko.com/api/v1
+          MyGekko light control via Supabase gekko-proxy (bypasses CORS)
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -110,6 +89,7 @@ export function DirectLightControl() {
             <div>Username: {credentials.username}</div>
             <div>Gekko ID: {credentials.gekkoId}</div>
             <div>API Key: {credentials.apiKey.substring(0, 8)}...</div>
+            <div className="text-xs text-green-600">✓ Using gekko-proxy (no CORS issues)</div>
           </div>
         </div>
 
@@ -141,9 +121,9 @@ export function DirectLightControl() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="flex gap-2 flex-wrap">
           <Button
-            onClick={testApiEndpoints}
+            onClick={() => testAllEndpoints(selectedItem)}
             variant="outline"
             size="sm"
             disabled={isLoading}
@@ -266,11 +246,11 @@ export function DirectLightControl() {
         </div>
 
         <div className="text-xs text-muted-foreground border-t pt-3">
-          <div className="font-medium mb-1">API Formats Being Tested:</div>
+          <div className="font-medium mb-1">API Commands via gekko-proxy:</div>
           <div className="space-y-1 font-mono text-xs">
-            <div>• live.my-gekko.com/api/v1/var/lights/ITEM/set?value=VALUE&apikey=KEY</div>
-            <div>• live.my-gekko.com/api/v1/var/lights/ITEM/scmd?value=VALUE&apikey=KEY</div>
-            <div>• POST with JSON body</div>
+            <div>• var/lights/ITEM/scmd?value=VALUE</div>
+            <div>• var/lights/ITEM/set?value=VALUE</div>
+            <div>• Bypasses CORS using Supabase edge function</div>
           </div>
         </div>
 

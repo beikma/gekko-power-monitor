@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 interface GekkoCredentials {
   username: string;
@@ -27,100 +28,52 @@ export function useDirectGekkoApi() {
     gekkoId: 'K999-7UOZ-8ZYZ-6TH3'
   };
 
+  const callGekkoProxy = useCallback(async (endpoint: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('gekko-proxy', {
+        body: { 
+          endpoint,
+          username: credentials.username,
+          key: credentials.apiKey,
+          gekkoid: credentials.gekkoId
+        }
+      });
+
+      if (error) throw error;
+      return { success: true, data };
+    } catch (err) {
+      throw new Error(err instanceof Error ? err.message : 'Proxy call failed');
+    }
+  }, [credentials]);
+
   const toggleLight = useCallback(async (itemId: string, turnOn: boolean) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log(`Toggling light ${itemId} to ${turnOn ? 'ON' : 'OFF'} using direct MyGekko API`);
+      console.log(`Toggling light ${itemId} to ${turnOn ? 'ON' : 'OFF'} via gekko-proxy`);
       
-      // Try the direct MyGekko API format suggested
-      const apiUrl = `https://live.my-gekko.com/api/v1/var/lights/${itemId}/set?value=${turnOn ? '1' : '0'}&apikey=${credentials.apiKey}`;
-      
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'MyGekko-Web-Client'
+      // Try different command formats
+      const commands = [
+        `var/lights/${itemId}/scmd?value=${turnOn ? '1' : '0'}`,
+        `var/lights/${itemId}/set?value=${turnOn ? '1' : '0'}`,
+        `var/lights/${itemId}?scmd=${turnOn ? '1' : '0'}`
+      ];
+
+      let lastError: any;
+      for (const command of commands) {
+        try {
+          const result = await callGekkoProxy(command);
+          console.log(`Light toggle successful with command: ${command}`, result);
+          toast.success(`Light ${itemId} ${turnOn ? 'turned on' : 'turned off'}`);
+          return { success: true, method: command, response: result };
+        } catch (err) {
+          lastError = err;
+          console.log(`Command ${command} failed, trying next...`);
         }
-      });
-
-      console.log(`API Response Status: ${response.status}`);
-      
-      if (!response.ok) {
-        // If direct API fails, try alternative formats
-        console.log('Direct API failed, trying alternative format...');
-        
-        // Try with gekkoId in URL
-        const altUrl1 = `https://live.my-gekko.com/api/v1/${credentials.gekkoId}/var/lights/${itemId}/set?value=${turnOn ? '1' : '0'}&apikey=${credentials.apiKey}`;
-        
-        const altResponse1 = await fetch(altUrl1, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        if (!altResponse1.ok) {
-          // Try POST method with body
-          console.log('Trying POST method...');
-          
-          const postResponse = await fetch(`https://live.my-gekko.com/api/v1/var/lights/${itemId}/set`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${credentials.apiKey}`
-            },
-            body: JSON.stringify({
-              value: turnOn ? '1' : '0',
-              gekkoid: credentials.gekkoId,
-              username: credentials.username
-            })
-          });
-
-          if (!postResponse.ok) {
-            // Try with scmd (set command) format from the API data
-            console.log('Trying scmd format...');
-            
-            const scmdUrl = `https://live.my-gekko.com/api/v1/var/lights/${itemId}/scmd?value=${turnOn ? '1' : '0'}&apikey=${credentials.apiKey}`;
-            
-            const scmdResponse = await fetch(scmdUrl, {
-              method: 'GET',
-              headers: {
-                'Accept': 'application/json'
-              }
-            });
-
-            if (!scmdResponse.ok) {
-              throw new Error(`All API methods failed. Last status: ${scmdResponse.status}`);
-            }
-            
-            const scmdResult = await scmdResponse.text();
-            console.log('SCMD API Response:', scmdResult);
-            
-            toast.success(`Light ${itemId} ${turnOn ? 'turned on' : 'turned off'} (via scmd)`);
-            return { success: true, method: 'scmd', response: scmdResult };
-          }
-          
-          const postResult = await postResponse.text();
-          console.log('POST API Response:', postResult);
-          
-          toast.success(`Light ${itemId} ${turnOn ? 'turned on' : 'turned off'} (via POST)`);
-          return { success: true, method: 'post', response: postResult };
-        }
-
-        const altResult1 = await altResponse1.text();
-        console.log('Alternative API Response:', altResult1);
-        
-        toast.success(`Light ${itemId} ${turnOn ? 'turned on' : 'turned off'} (alt format)`);
-        return { success: true, method: 'alternative', response: altResult1 };
       }
 
-      const result = await response.text();
-      console.log('Direct API Response:', result);
-      
-      toast.success(`Light ${itemId} ${turnOn ? 'turned on' : 'turned off'}`);
-      return { success: true, method: 'direct', response: result };
+      throw lastError;
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to toggle light';
@@ -131,52 +84,36 @@ export function useDirectGekkoApi() {
     } finally {
       setIsLoading(false);
     }
-  }, [credentials]);
+  }, [callGekkoProxy]);
 
   const setLightDim = useCallback(async (itemId: string, dimLevel: number) => {
     setIsLoading(true);
     setError(null);
 
     try {
-      console.log(`Setting light ${itemId} dim to ${dimLevel}%`);
+      console.log(`Setting light ${itemId} dim to ${dimLevel}% via gekko-proxy`);
       
-      // Try dim command with D prefix (from API docs format)
-      const dimUrl = `https://live.my-gekko.com/api/v1/var/lights/${itemId}/set?value=D${dimLevel}&apikey=${credentials.apiKey}`;
-      
-      const response = await fetch(dimUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
+      // Try different dimming command formats
+      const commands = [
+        `var/lights/${itemId}/scmd?value=D${dimLevel}`,
+        `var/lights/${itemId}/set?value=D${dimLevel}`,
+        `var/lights/${itemId}?scmd=D${dimLevel}`
+      ];
+
+      let lastError: any;
+      for (const command of commands) {
+        try {
+          const result = await callGekkoProxy(command);
+          console.log(`Light dim successful with command: ${command}`, result);
+          toast.success(`Light ${itemId} dimmed to ${dimLevel}%`);
+          return { success: true, method: command, response: result };
+        } catch (err) {
+          lastError = err;
+          console.log(`Dim command ${command} failed, trying next...`);
         }
-      });
-
-      if (!response.ok) {
-        // Try scmd format for dimming
-        const scmdUrl = `https://live.my-gekko.com/api/v1/var/lights/${itemId}/scmd?value=D${dimLevel}&apikey=${credentials.apiKey}`;
-        
-        const scmdResponse = await fetch(scmdUrl, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          }
-        });
-
-        if (!scmdResponse.ok) {
-          throw new Error(`Dim command failed. Status: ${scmdResponse.status}`);
-        }
-
-        const scmdResult = await scmdResponse.text();
-        console.log('Dim SCMD Response:', scmdResult);
-        
-        toast.success(`Light ${itemId} dimmed to ${dimLevel}% (via scmd)`);
-        return { success: true, method: 'scmd', response: scmdResult };
       }
 
-      const result = await response.text();
-      console.log('Dim API Response:', result);
-      
-      toast.success(`Light ${itemId} dimmed to ${dimLevel}%`);
-      return { success: true, method: 'direct', response: result };
+      throw lastError;
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to dim light';
@@ -187,7 +124,7 @@ export function useDirectGekkoApi() {
     } finally {
       setIsLoading(false);
     }
-  }, [credentials]);
+  }, [callGekkoProxy]);
 
   const setLightColor = useCallback(async (itemId: string, rgbHex: string) => {
     setIsLoading(true);
@@ -196,42 +133,29 @@ export function useDirectGekkoApi() {
     try {
       // Convert hex to RGB integer (24-bit)
       const rgb = parseInt(rgbHex.replace('#', ''), 16);
-      console.log(`Setting light ${itemId} color to RGB: ${rgb} (${rgbHex})`);
+      console.log(`Setting light ${itemId} color to RGB: ${rgb} (${rgbHex}) via gekko-proxy`);
       
-      // Try color command with C prefix
-      const colorUrl = `https://live.my-gekko.com/api/v1/var/lights/${itemId}/set?value=C${rgb}&apikey=${credentials.apiKey}`;
-      
-      const response = await fetch(colorUrl, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json'
+      // Try different color command formats
+      const commands = [
+        `var/lights/${itemId}/scmd?value=C${rgb}`,
+        `var/lights/${itemId}/set?value=C${rgb}`,
+        `var/lights/${itemId}?scmd=C${rgb}`
+      ];
+
+      let lastError: any;
+      for (const command of commands) {
+        try {
+          const result = await callGekkoProxy(command);
+          console.log(`Light color successful with command: ${command}`, result);
+          toast.success(`Light ${itemId} color changed to ${rgbHex}`);
+          return { success: true, method: command, response: result };
+        } catch (err) {
+          lastError = err;
+          console.log(`Color command ${command} failed, trying next...`);
         }
-      });
-
-      if (!response.ok) {
-        // Try scmd format for color
-        const scmdUrl = `https://live.my-gekko.com/api/v1/var/lights/${itemId}/scmd?value=C${rgb}&apikey=${credentials.apiKey}`;
-        
-        const scmdResponse = await fetch(scmdUrl, {
-          method: 'GET'
-        });
-
-        if (!scmdResponse.ok) {
-          throw new Error(`Color command failed. Status: ${scmdResponse.status}`);
-        }
-
-        const scmdResult = await scmdResponse.text();
-        console.log('Color SCMD Response:', scmdResult);
-        
-        toast.success(`Light ${itemId} color changed (via scmd)`);
-        return { success: true, method: 'scmd', response: scmdResult };
       }
 
-      const result = await response.text();
-      console.log('Color API Response:', result);
-      
-      toast.success(`Light ${itemId} color changed to ${rgbHex}`);
-      return { success: true, method: 'direct', response: result };
+      throw lastError;
 
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to change light color';
@@ -242,12 +166,42 @@ export function useDirectGekkoApi() {
     } finally {
       setIsLoading(false);
     }
-  }, [credentials]);
+  }, [callGekkoProxy]);
+
+  const testAllEndpoints = useCallback(async (itemId: string) => {
+    setIsLoading(true);
+    console.log('Testing all light control endpoints via gekko-proxy...');
+    
+    const testCommands = [
+      `var/lights/${itemId}`,
+      `var/lights/${itemId}/status`,
+      `var/lights/${itemId}/scmd?value=1`,
+      `var/lights/${itemId}/set?value=1`,
+      `var/lights/${itemId}?scmd=1`
+    ];
+
+    const results: any[] = [];
+    for (const command of testCommands) {
+      try {
+        console.log(`Testing: ${command}`);
+        const result = await callGekkoProxy(command);
+        results.push({ command, success: true, result });
+        console.log(`✓ ${command} - SUCCESS`, result);
+      } catch (err) {
+        results.push({ command, success: false, error: err });
+        console.log(`✗ ${command} - FAILED`, err);
+      }
+    }
+
+    setIsLoading(false);
+    return results;
+  }, [callGekkoProxy]);
 
   return {
     toggleLight,
     setLightDim,
     setLightColor,
+    testAllEndpoints,
     isLoading,
     error,
     credentials
