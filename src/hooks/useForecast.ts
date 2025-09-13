@@ -43,22 +43,27 @@ export function useForecast() {
     try {
       console.log('Running forecast with options:', options);
       
-      // Call Supabase Edge Function
+      // Call Supabase Edge Function with query parameters
       const params = new URLSearchParams();
       if (options.useLiveData) params.append('live', 'true');
       if (options.forecastHours) params.append('hours', options.forecastHours.toString());
       
-      const { data: result, error: supabaseError } = await supabase.functions.invoke(
-        'energy-forecast',
-        {
-          method: 'GET',
-          body: null,
-        }
-      );
+      // For GET requests with query params, we need to call the function URL directly
+      const functionUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/energy-forecast?${params.toString()}`;
       
-      if (supabaseError) {
-        throw new Error(`Forecast API error: ${supabaseError.message}`);
+      const response = await fetch(functionUrl, {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheXR0d21tZGN1YmZqcXJwenR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2NzQ3MzcsImV4cCI6MjA3MzI1MDczN30.40c-xV4k_w8k5TX7xtWUBOn2MU1yif6FzfYDE5e3tNI`,
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const result = await response.json();
       
       if (!result || !result.success) {
         throw new Error(result?.error || 'Forecast generation failed');

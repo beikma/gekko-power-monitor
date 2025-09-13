@@ -83,11 +83,11 @@ export function ForecastCard({ className }: ForecastCardProps) {
   }, [hasData, data]);
 
   const handleRunForecast = () => {
-    runForecast({ forecastHours: 48 });
+    runForecast({ useLiveData: true, forecastHours: 48 });
   };
 
-  const handleRunLiveForecast = () => {
-    runForecast({ useLiveData: true, forecastHours: 48 });
+  const handleRunDemoForecast = () => {
+    runForecast({ useLiveData: false, forecastHours: 48 });
   };
 
   // Calculate stats
@@ -146,7 +146,7 @@ export function ForecastCard({ className }: ForecastCardProps) {
               Energy Forecast
             </CardTitle>
             <CardDescription>
-              AI-powered 48-hour energy consumption predictions
+              AI-powered 48-hour energy consumption predictions using your real building data
             </CardDescription>
           </div>
           
@@ -155,24 +155,24 @@ export function ForecastCard({ className }: ForecastCardProps) {
               onClick={handleRunForecast}
               disabled={isLoading}
               size="sm"
-              variant="outline"
+              variant="default"
             >
               {isLoading ? (
                 <RefreshCw className="h-4 w-4 animate-spin mr-2" />
               ) : (
-                <TrendingUp className="h-4 w-4 mr-2" />
+                <Zap className="h-4 w-4 mr-2" />
               )}
-              Run Forecast
+              Run Forecast (Live Data)
             </Button>
             
             <Button 
-              onClick={handleRunLiveForecast}
+              onClick={handleRunDemoForecast}
               disabled={isLoading}
               size="sm"
-              variant="default"
+              variant="outline"
             >
-              <Zap className="h-4 w-4 mr-2" />
-              Live Data
+              <TrendingUp className="h-4 w-4 mr-2" />
+              Demo Data
             </Button>
           </div>
         </div>

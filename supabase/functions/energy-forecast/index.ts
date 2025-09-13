@@ -213,9 +213,42 @@ serve(async (req) => {
     let data: { timestamp: Date; value: number }[];
     
     if (useLiveData) {
-      // TODO: Implement live data fetching from your energy database
-      // For now, use synthetic data
-      data = generateSyntheticData();
+      // Fetch real energy data from database
+      try {
+        const { createClient } = await import('https://esm.sh/@supabase/supabase-js@2.57.4');
+        const supabaseUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtheXR0d21tZGN1YmZqcXJwenR3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc2NzQ3MzcsImV4cCI6MjA3MzI1MDczN30.40c-xV4k_w8k5TX7xtWUBOn2MU1yif6FzfYDE5e3tNI';
+        const supabase = createClient(supabaseUrl, supabaseKey);
+        
+        // Fetch last 30 days of hourly energy data
+        const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+        
+        const { data: energyData, error } = await supabase
+          .from('energy_readings')
+          .select('recorded_at, current_power, daily_energy')
+          .gte('recorded_at', thirtyDaysAgo.toISOString())
+          .order('recorded_at', { ascending: true });
+        
+        if (error) {
+          console.error('Database query error:', error);
+          throw new Error(`Failed to fetch energy data: ${error.message}`);
+        }
+        
+        if (!energyData || energyData.length === 0) {
+          console.log('No recent energy data found, falling back to synthetic data');
+          data = generateSyntheticData();
+        } else {
+          console.log(`Found ${energyData.length} real energy records`);
+          data = energyData.map(record => ({
+            timestamp: new Date(record.recorded_at),
+            value: parseFloat(record.current_power) || 0
+          }));
+        }
+      } catch (dbError) {
+        console.error('Error fetching live data:', dbError);
+        console.log('Falling back to synthetic data');
+        data = generateSyntheticData();
+      }
     } else {
       data = generateSyntheticData();
     }
@@ -246,7 +279,7 @@ serve(async (req) => {
         forecast_horizon_hours: forecastHours,
         generated_at: new Date().toISOString(),
         training_duration_ms: trainingDuration,
-        algorithm: 'Simple Trend + Seasonality (Prophet-inspired)'
+        algorithm: useLiveData ? 'Simple Trend + Seasonality (using real energy data)' : 'Simple Trend + Seasonality (synthetic demo data)'
       }
     };
     
