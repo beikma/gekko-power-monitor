@@ -8,6 +8,11 @@ interface ClimateControlDashboardProps {
 }
 
 export default function ClimateControlDashboard({ data }: ClimateControlDashboardProps) {
+  // Debug logging
+  console.log('ClimateControlDashboard received data:', data);
+  console.log('ClimateControlDashboard weather:', data?.globals?.meteo);
+  console.log('ClimateControlDashboard roomtemps:', data?.roomtemps);
+  
   // Extract weather data
   const weather = data?.globals?.meteo || {};
   const temperature = parseFloat(weather.temperature?.value) || 0;

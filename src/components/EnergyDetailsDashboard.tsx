@@ -8,6 +8,10 @@ interface EnergyDetailsDashboardProps {
 }
 
 export default function EnergyDetailsDashboard({ data }: EnergyDetailsDashboardProps) {
+  // Debug logging
+  console.log('EnergyDetailsDashboard received data:', data);
+  console.log('EnergyDetailsDashboard energycosts:', data?.energycosts);
+  
   // Extract energy costs data
   const energyCosts = data?.energycosts || {};
   const energyMeters = Object.entries(energyCosts)

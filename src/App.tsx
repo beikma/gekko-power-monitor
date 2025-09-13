@@ -102,17 +102,38 @@ const App = () => (
 
 // Wrapper components with data fetching
 function EnergyDashboard() {
-  const { data, status } = useGekkoApi({ refreshInterval: 30000 });
+  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  
+  // Debug logging
+  console.log('EnergyDashboard data:', { data, status, isLoading, error });
+  
+  if (isLoading) return <div className="p-6 text-center">Loading energy data...</div>;
+  if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
+  
   return <EnergyDetailsDashboard data={data} />;
 }
 
 function LightingDashboard() {
-  const { data, status } = useGekkoApi({ refreshInterval: 30000 });
+  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  
+  // Debug logging
+  console.log('LightingDashboard data:', { data, status, isLoading, error });
+  
+  if (isLoading) return <div className="p-6 text-center">Loading lighting data...</div>;
+  if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
+  
   return <LightingControlDashboard data={data} status={status} />;
 }
 
 function ClimateDashboard() {
-  const { data, status } = useGekkoApi({ refreshInterval: 30000 });
+  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  
+  // Debug logging
+  console.log('ClimateDashboard data:', { data, status, isLoading, error });
+  
+  if (isLoading) return <div className="p-6 text-center">Loading climate data...</div>;
+  if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
+  
   return <ClimateControlDashboard data={data} />;
 }
 
