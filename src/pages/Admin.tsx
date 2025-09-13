@@ -10,6 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useBuildingData } from '@/hooks/useBuildingData';
 import { Separator } from '@/components/ui/separator';
+import { MCPTestPanel } from '@/components/MCPTestPanel';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -483,6 +484,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+
+          {/* MCP Server Integration */}
+          <MCPTestPanel />
         </div>
       </main>
     </div>
