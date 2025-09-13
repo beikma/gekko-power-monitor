@@ -9,6 +9,7 @@ import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import EnergyDetailsDashboard from "./components/EnergyDetailsDashboard";
 import AI from "./pages/AI";
+import Marketplace from "./pages/Marketplace";
 import Configuration from "./pages/Configuration";
 import BuildingProfile from "./components/BuildingProfile";
 import Admin from "./pages/Admin";
@@ -42,6 +43,12 @@ const App: React.FC = () => {
             <Route path="/ai" element={
               <DashboardLayout>
                 <AI />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/marketplace" element={
+              <DashboardLayout>
+                <Marketplace />
               </DashboardLayout>
             } />
             
