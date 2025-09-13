@@ -31,36 +31,49 @@ serve(async (req) => {
       );
     }
 
-    // Build the myGEKKO API URL - MyGekko API uses single apikey parameter
-    const gekkoParams = new URLSearchParams();
-    
-    // Use the 'key' parameter as the apikey for MyGekko API
-    gekkoParams.append('apikey', key);
+    // Build the myGEKKO API URL using original authentication format
+    const gekkoParams = new URLSearchParams({
+      username,
+      key,
+      gekkoid,
+    });
 
     let gekkoUrl;
     let requestOptions: RequestInit = {
       method: req.method,
     };
 
-    // Handle different command formats for /set endpoints (preferred for loads/sockets)
+    // Handle different command formats - prioritize /set endpoints for loads/sockets
     if (endpoint.includes('/set') && value !== null) {
       // Individual socket/load commands with /set endpoint (e.g., var/loads/item15/set)
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
       requestOptions.method = 'GET';
     } else if (endpoint.includes('/scmd') && value !== null) {
-      // Individual commands with /scmd endpoint (fallback)
+      // Individual commands with /scmd endpoint 
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
       requestOptions.method = 'GET';
     } else if (endpoint === 'scmd' && index && value !== null) {
-      // Direct scmd endpoint with index (legacy)
+      // Direct scmd endpoint with index
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+    } else if (endpoint === 'var/scmd' && index && value !== null) {
+      // var/scmd with index parameter
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+    } else if (endpoint === 'var' && index && value !== null) {
+      // Direct var endpoint with index and value
       gekkoParams.append('index', index);
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
       requestOptions.method = 'GET';
     } else {
-      // For regular GET requests (status, var, etc.)
+      // For regular GET requests
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
     }
     
