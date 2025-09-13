@@ -118,9 +118,9 @@ export function useGarageSocket() {
       });
 
       console.log(`🚀 Sending command to ${socket.id}: ${newState ? 'ON' : 'OFF'}`);
-      console.log(`🔗 Full URL: ${proxyUrl}?endpoint=var/${socket.id}/scmd&${baseParams}`);
+      console.log(`🔗 Full URL: ${proxyUrl}?endpoint=var/loads/${socket.id}/scmd&${baseParams}`);
       
-      const response = await fetch(`${proxyUrl}?endpoint=var/${socket.id}/scmd&${baseParams}`);
+      const response = await fetch(`${proxyUrl}?endpoint=var/loads/${socket.id}/scmd&${baseParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
       

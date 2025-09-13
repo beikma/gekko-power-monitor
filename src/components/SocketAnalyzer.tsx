@@ -93,7 +93,7 @@ export function SocketAnalyzer() {
         value: command === 'on' ? '1' : '0'
       });
       
-      const response = await fetch(`${proxyUrl}?endpoint=var/${socketId}/scmd&${params}`);
+      const response = await fetch(`${proxyUrl}?endpoint=var/loads/${socketId}/scmd&${params}`);
       
       if (response.ok) {
         toast({
