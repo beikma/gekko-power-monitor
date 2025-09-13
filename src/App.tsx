@@ -3,7 +3,7 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { ToastProvider } from "@/components/ui/toast-provider";
+import { ToastProvider as MyToastProvider } from "@/components/ui/toast-provider";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import { DashboardOverview } from "./components/overview/DashboardOverview";
@@ -25,7 +25,7 @@ const App: React.FC = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <ToastProvider>
+        <MyToastProvider>
           <Toaster />
           <Sonner />
           <BrowserRouter>
@@ -100,7 +100,7 @@ const App: React.FC = () => {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
-        </ToastProvider>
+        </MyToastProvider>
       </TooltipProvider>
     </QueryClientProvider>
   );
