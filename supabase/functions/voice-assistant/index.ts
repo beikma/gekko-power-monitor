@@ -104,15 +104,15 @@ async function callGekkoAPI(endpoint: string, params: any = {}) {
   }
 }
 
-// Intent classification with rule-based approach
+// Enhanced intent classification with more patterns
 function classifyIntent(text: string): { intent: string; confidence: number; params: any } {
   const lowerText = text.toLowerCase();
   
-  // Set point patterns
-  if (lowerText.includes('set') && (lowerText.includes('temperature') || lowerText.includes('light') || lowerText.includes('to'))) {
-    const tempMatch = lowerText.match(/set.*?temperature.*?to\s*(\d+(?:\.\d+)?)/);
-    const lightMatch = lowerText.match(/set.*?light.*?to\s*(\d+(?:\.\d+)?)/);
-    const roomMatch = lowerText.match(/(office|lobby|living|kitchen|bedroom|bathroom)/);
+  // Set/Control patterns
+  if (lowerText.includes('set') || lowerText.includes('turn') || lowerText.includes('adjust') || lowerText.includes('change')) {
+    const tempMatch = lowerText.match(/(?:set|adjust|change).*?temperature.*?(?:to\s*)?(\d+(?:\.\d+)?)/);
+    const lightMatch = lowerText.match(/(?:set|turn|adjust).*?light.*?(?:to\s*)?(\d+(?:\.\d+)?)/);
+    const roomMatch = lowerText.match(/(office|lobby|living|kitchen|bedroom|bathroom|entrance|hallway|meeting|conference)/);
     
     if (tempMatch) {
       return {
@@ -141,14 +141,27 @@ function classifyIntent(text: string): { intent: string; confidence: number; par
     }
   }
   
-  // Read point patterns
-  if (lowerText.includes('what') || lowerText.includes('temperature') || lowerText.includes('status') || lowerText.includes('current')) {
-    const roomMatch = lowerText.match(/(office|lobby|living|kitchen|bedroom|bathroom)/);
+  // Read/Query patterns - enhanced
+  if (lowerText.includes('what') || lowerText.includes('how') || lowerText.includes('show') || lowerText.includes('tell me') || lowerText.includes('current') || lowerText.includes('status')) {
+    const roomMatch = lowerText.match(/(office|lobby|living|kitchen|bedroom|bathroom|entrance|hallway|meeting|conference)/);
     
-    if (lowerText.includes('temperature')) {
+    // Energy/power queries
+    if (lowerText.includes('energy') || lowerText.includes('power') || lowerText.includes('consumption') || lowerText.includes('usage')) {
       return {
         intent: 'read_point',
-        confidence: 0.8,
+        confidence: 0.9,
+        params: {
+          type: 'energy',
+          room: roomMatch?.[1] || null
+        }
+      };
+    }
+    
+    // Temperature queries
+    if (lowerText.includes('temperature') || lowerText.includes('temp') || lowerText.includes('hot') || lowerText.includes('cold')) {
+      return {
+        intent: 'read_point',
+        confidence: 0.9,
         params: {
           type: 'temperature',
           room: roomMatch?.[1] || 'office'
@@ -156,7 +169,8 @@ function classifyIntent(text: string): { intent: string; confidence: number; par
       };
     }
     
-    if (lowerText.includes('light') || lowerText.includes('brightness')) {
+    // Light queries
+    if (lowerText.includes('light') || lowerText.includes('brightness') || lowerText.includes('lamp') || lowerText.includes('illumination')) {
       return {
         intent: 'read_point',
         confidence: 0.8,
@@ -166,45 +180,58 @@ function classifyIntent(text: string): { intent: string; confidence: number; par
         }
       };
     }
-    
-    if (lowerText.includes('boiler') || lowerText.includes('heating')) {
+
+    // Building/system status
+    if (lowerText.includes('building') || lowerText.includes('system') || lowerText.includes('everything') || lowerText.includes('all')) {
       return {
         intent: 'read_point',
         confidence: 0.8,
         params: {
-          type: 'switch',
-          room: 'technical room'
+          type: 'status',
+          room: null
         }
       };
     }
   }
   
-  // List points
-  if (lowerText.includes('list') || lowerText.includes('show all') || lowerText.includes('available')) {
+  // Energy analysis patterns
+  if (lowerText.includes('analysis') || lowerText.includes('efficiency') || lowerText.includes('optimization') || lowerText.includes('savings')) {
     return {
-      intent: 'list_points',
+      intent: 'energy_analysis',
       confidence: 0.8,
-      params: {}
-    };
-  }
-  
-  // System health
-  if (lowerText.includes('health') || lowerText.includes('system') || lowerText.includes('status')) {
-    return {
-      intent: 'health',
-      confidence: 0.7,
-      params: {}
-    };
-  }
-  
-  // History/consumption
-  if (lowerText.includes('energy') || lowerText.includes('consumption') || lowerText.includes('history') || lowerText.includes('today') || lowerText.includes('yesterday')) {
-    return {
-      intent: 'history',
-      confidence: 0.7,
       params: {
-        timeframe: lowerText.includes('yesterday') ? 'yesterday' : 'today'
+        type: 'comprehensive'
       }
+    };
+  }
+  
+  // List/inventory patterns
+  if (lowerText.includes('list') || lowerText.includes('show all') || lowerText.includes('available') || lowerText.includes('inventory')) {
+    return {
+      intent: 'read_point',
+      confidence: 0.8,
+      params: {
+        type: 'list',
+        room: null
+      }
+    };
+  }
+  
+  // System health patterns
+  if (lowerText.includes('health') || lowerText.includes('check') || lowerText.includes('working') || lowerText.includes('connection')) {
+    return {
+      intent: 'system_health',
+      confidence: 0.9,
+      params: {}
+    };
+  }
+  
+  // Help patterns
+  if (lowerText.includes('help') || lowerText.includes('commands') || lowerText.includes('what can') || lowerText.includes('how do')) {
+    return {
+      intent: 'help',
+      confidence: 0.9,
+      params: {}
     };
   }
   

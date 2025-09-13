@@ -6,8 +6,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
-import { Mic, MicOff, Volume2, VolumeX, MessageSquare, Activity, X, HelpCircle, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, MessageSquare, Activity, X, HelpCircle, AlertTriangle, CheckCircle, Clock, Database } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { VoiceCapabilitiesOverview } from './VoiceDataSources';
 
 interface Interaction {
   id: string;
@@ -413,39 +414,73 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
                 Sample Commands
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
               <DialogHeader>
-                <DialogTitle>Voice Commands</DialogTitle>
+                <DialogTitle>Voice Commands & Data Access</DialogTitle>
                 <DialogDescription>
-                  Here are some example commands you can try:
+                  ChatGPT can access all your building systems and data sources
                 </DialogDescription>
               </DialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Control Commands</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• "Set office temperature to 22.5"</li>
-                    <li>• "Set lobby light to 80 percent"</li>
-                    <li>• "Turn on the boiler"</li>
-                  </ul>
+              <div className="space-y-6">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Control Commands</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• "Set office temperature to 22.5"</li>
+                      <li>• "Turn lobby lights to 80 percent"</li>
+                      <li>• "Adjust meeting room temperature"</li>
+                      <li>• "Turn off all lights"</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Status Queries</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• "What's the current energy usage?"</li>
+                      <li>• "Show me building temperature"</li>
+                      <li>• "How much solar power today?"</li>
+                      <li>• "What's the weather forecast?"</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">Analytics</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• "Give me an energy analysis"</li>
+                      <li>• "Show optimization opportunities"</li>
+                      <li>• "What's our carbon footprint?"</li>
+                      <li>• "Efficiency recommendations"</li>
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-sm mb-2">System Health</h4>
+                    <ul className="text-sm text-muted-foreground space-y-1">
+                      <li>• "System health check"</li>
+                      <li>• "Any active alarms?"</li>
+                      <li>• "Show all available systems"</li>
+                      <li>• "Connection status"</li>
+                    </ul>
+                  </div>
                 </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-2">Query Commands</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• "What is the office temperature"</li>
-                    <li>• "Show me the lobby light status"</li>
-                    <li>• "List all controllable points"</li>
-                  </ul>
-                </div>
-                <div>
-                  <h4 className="font-medium text-sm mb-2">System Commands</h4>
-                  <ul className="text-sm text-muted-foreground space-y-1">
-                    <li>• "System health check"</li>
-                    <li>• "Show energy history today"</li>
-                    <li>• "What happened yesterday"</li>
-                  </ul>
-                </div>
+                
+                <VoiceCapabilitiesOverview />
               </div>
+            </DialogContent>
+          </Dialog>
+          
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Database className="h-4 w-4 mr-2" />
+                Data Sources
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Available Data Sources</DialogTitle>
+                <DialogDescription>
+                  Real-time access to all building systems and external data
+                </DialogDescription>
+              </DialogHeader>
+              <VoiceCapabilitiesOverview />
             </DialogContent>
           </Dialog>
         </div>
