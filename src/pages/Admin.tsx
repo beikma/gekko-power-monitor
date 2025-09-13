@@ -11,6 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { useBuildingData } from '@/hooks/useBuildingData';
 import { Separator } from '@/components/ui/separator';
 import { MCPTestPanel } from '@/components/MCPTestPanel';
+import { ForecastCard } from '@/components/ForecastCard';
 
 export default function Admin() {
   const navigate = useNavigate();
@@ -484,6 +485,9 @@ export default function Admin() {
               </div>
             </CardContent>
           </Card>
+
+          {/* Energy Forecasting Demo */}
+          <ForecastCard />
 
           {/* MCP Server Integration */}
           <MCPTestPanel />
