@@ -3,6 +3,8 @@ import { WeatherForecastCard } from '@/components/WeatherForecastCard';
 import { CarbonIntensityCard } from '@/components/CarbonIntensityCard';
 import { SolarForecastCard } from '@/components/SolarForecastCard';
 import { DirectLightControl } from '@/components/DirectLightControl';
+import { MCPTestPanel } from '@/components/MCPTestPanel';
+import { OpenMeteoTestCard } from '@/components/OpenMeteoTestCard';
 
 export default function Admin() {
   return (
@@ -16,6 +18,11 @@ export default function Admin() {
       
       <div className="grid gap-6">
         <DirectLightControl />
+        
+        <div className="grid lg:grid-cols-2 gap-6">
+          <MCPTestPanel />
+          <OpenMeteoTestCard />
+        </div>
         
         <ForecastCard />
         

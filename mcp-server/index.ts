@@ -8,6 +8,7 @@ import rateLimit from 'express-rate-limit';
 import dotenv from 'dotenv';
 import { z } from 'zod';
 import { gekkoTools } from './tools/gekkoTools.js';
+import { openMeteoTools } from './tools/openMeteo.js';
 
 // Load environment variables
 dotenv.config();
@@ -25,10 +26,13 @@ if (!MCP_TOKEN || MCP_TOKEN === 'default-token-change-me') {
 
 // Input validation schemas
 const ToolRequestSchema = z.object({
-  tool: z.enum(['list_points', 'read_point', 'set_point', 'health']),
+  tool: z.enum(['list_points', 'read_point', 'set_point', 'health', 'weather_forecast']),
   args: z.object({
     point: z.string().optional(),
     value: z.string().optional(),
+    lat: z.number().optional(),
+    lon: z.number().optional(),
+    hours: z.number().optional(),
   }).optional(),
 });
 
@@ -39,6 +43,12 @@ const ReadPointSchema = z.object({
 const SetPointSchema = z.object({
   point: z.string().min(1, 'Point identifier is required'),
   value: z.string().min(1, 'Value is required'),
+});
+
+const WeatherForecastSchema = z.object({
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  hours: z.number().min(1).max(168).optional().default(48),
 });
 
 // Create Express app for HTTP MCP server
@@ -169,6 +179,35 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           properties: {},
         },
       },
+      {
+        name: 'weather_forecast',
+        description: 'Get weather forecast including temperature and solar radiation from Open-Meteo',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            lat: {
+              type: 'number',
+              description: 'Latitude coordinate (-90 to 90)',
+              minimum: -90,
+              maximum: 90
+            },
+            lon: {
+              type: 'number', 
+              description: 'Longitude coordinate (-180 to 180)',
+              minimum: -180,
+              maximum: 180
+            },
+            hours: {
+              type: 'number',
+              description: 'Number of forecast hours (1-168, default: 48)',
+              minimum: 1,
+              maximum: 168,
+              default: 48
+            },
+          },
+          required: ['lat', 'lon'],
+        },
+      },
     ],
   };
 });
@@ -194,6 +233,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         break;
       case 'health':
         result = await gekkoTools.health();
+        break;
+      case 'weather_forecast':
+        WeatherForecastSchema.parse(args);
+        result = await openMeteoTools.weatherForecast(args?.lat!, args?.lon!, args?.hours);
         break;
       default:
         throw new Error(`Unknown tool: ${name}`);
@@ -268,6 +311,10 @@ app.post('/mcp/tools', authenticate, async (req, res) => {
         break;
       case 'health':
         result = await gekkoTools.health();
+        break;
+      case 'weather_forecast':
+        WeatherForecastSchema.parse(args);
+        result = await openMeteoTools.weatherForecast(args?.lat!, args?.lon!, args?.hours);
         break;
       default:
         return res.status(400).json({ 
