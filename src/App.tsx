@@ -110,7 +110,7 @@ function EnergyDashboard() {
   if (isLoading) return <div className="p-6 text-center">Loading energy data...</div>;
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
-  return <EnergyDetailsDashboard data={data} />;
+  return <EnergyDetailsDashboard data={status} />;
 }
 
 function LightingDashboard() {
@@ -134,7 +134,7 @@ function ClimateDashboard() {
   if (isLoading) return <div className="p-6 text-center">Loading climate data...</div>;
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
-  return <ClimateControlDashboard data={data} />;
+  return <ClimateControlDashboard data={status} />;
 }
 
 function SecurityDashboard() {
