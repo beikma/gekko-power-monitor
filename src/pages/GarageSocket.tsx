@@ -1,5 +1,7 @@
 import React from 'react';
 import { GarageSocketController } from '@/components/GarageSocketController';
+import { ApiCommunicationTracker } from '@/components/ApiCommunicationTracker';
+import { MyGekkoApiTester } from '@/components/MyGekkoApiTester';
 
 export default function GarageSocket() {
   return (
@@ -11,7 +13,14 @@ export default function GarageSocket() {
         </p>
       </div>
       
-      <GarageSocketController />
+      <div className="space-y-6">
+        <GarageSocketController />
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ApiCommunicationTracker />
+          <MyGekkoApiTester />
+        </div>
+      </div>
     </div>
   );
 }

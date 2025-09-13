@@ -96,9 +96,18 @@ export function useGarageSocket() {
   const toggleSocket = useCallback(async () => {
     if (!socket) return;
     
+    const startTime = Date.now();
+    const newState = !socket.isOn;
+    
+    // Log to API tracker if available
+    const apiLogger = (window as any).apiLogger;
+    apiLogger?.addLog({
+      type: 'request',
+      method: 'POST',
+      url: `gekko-proxy - Toggle ${socket.id} to ${newState ? 'ON' : 'OFF'}`
+    });
+    
     try {
-      const newState = !socket.isOn;
-      
       // Send command to myGEKKO
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
       const baseParams = new URLSearchParams({
@@ -109,20 +118,45 @@ export function useGarageSocket() {
       });
 
       console.log(`🚀 Sending command to ${socket.id}: ${newState ? 'ON' : 'OFF'}`);
+      console.log(`🔗 Full URL: ${proxyUrl}?endpoint=var/${socket.id}/scmd&${baseParams}`);
       
       const response = await fetch(`${proxyUrl}?endpoint=var/${socket.id}/scmd&${baseParams}`);
+      const responseText = await response.text();
+      const duration = Date.now() - startTime;
       
-      console.log(`📡 Command response:`, response.status, await response.text());
+      console.log(`📡 Command response:`, response.status, responseText);
+      
+      // Log response
+      apiLogger?.addLog({
+        type: response.ok ? 'response' : 'error',
+        method: 'POST',
+        url: `gekko-proxy - Toggle ${socket.id}`,
+        status: response.status,
+        data: responseText,
+        duration
+      });
       
       if (!response.ok) {
-        throw new Error(`Failed to toggle socket: ${response.status}`);
+        throw new Error(`Failed to toggle socket: ${response.status} - ${responseText}`);
       }
 
       // Update local state
       setSocket(prev => prev ? { ...prev, isOn: newState } : null);
     } catch (err) {
+      const duration = Date.now() - startTime;
+      const errorMessage = err instanceof Error ? err.message : 'Failed to toggle socket';
+      
       console.error('Error toggling socket:', err);
-      setError(err instanceof Error ? err.message : 'Failed to toggle socket');
+      setError(errorMessage);
+      
+      // Log error
+      apiLogger?.addLog({
+        type: 'error',
+        method: 'POST',
+        url: `gekko-proxy - Toggle ${socket.id}`,
+        data: errorMessage,
+        duration
+      });
     }
   }, [socket]);
 
