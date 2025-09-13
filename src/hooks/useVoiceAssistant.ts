@@ -24,8 +24,8 @@ export function useVoiceAssistant() {
       const { data, error } = await supabase.functions.invoke('voice-assistant', {
         body: {
           text,
-          userId: 'demo-user', // In real app, get from auth
-          clientIp: 'unknown' // In real app, get client IP
+          userId: 'demo-user',
+          clientIp: 'unknown'
         }
       });
 

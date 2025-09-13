@@ -27,28 +27,79 @@ const supabase = createClient(
   Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
 );
 
-// MCP client for myGEKKO integration
-async function callMCP(tool: string, args: any = {}) {
-  const mcpUrl = 'http://localhost:8787/mcp/tools';
-  const token = 'default-token-change-me';
-  
+// OpenAI client for intelligent intent recognition
+async function classifyIntentWithAI(text: string): Promise<{ intent: string; confidence: number; params: any }> {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!openAIApiKey) {
+    console.warn('OpenAI API key not found, falling back to rule-based classification');
+    return classifyIntent(text);
+  }
+
   try {
-    const response = await fetch(mcpUrl, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${token}`,
+        'Authorization': `Bearer ${openAIApiKey}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ tool, args })
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: `You are a smart building voice assistant. Analyze user commands and return JSON with intent classification.
+
+Available intents:
+- "set_point": User wants to set temperature, lights, or control something (e.g., "set office temperature to 22", "turn on lobby lights")
+- "read_point": User wants to know status/values (e.g., "what's the office temperature", "show energy consumption")
+- "energy_analysis": User wants energy insights (e.g., "how much energy did we use", "energy efficiency report")
+- "system_health": System status check (e.g., "system status", "is everything working")
+- "help": User needs assistance
+
+Extract parameters like room, value, timeframe. Return JSON: {"intent": "...", "confidence": 0.0-1.0, "params": {}}`
+          },
+          {
+            role: 'user',
+            content: text
+          }
+        ],
+        max_tokens: 150
+      })
     });
 
     if (!response.ok) {
-      throw new Error(`MCP request failed: ${response.statusText}`);
+      throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
-    return await response.json();
+    const data = await response.json();
+    const aiResponse = data.choices[0].message.content;
+    
+    try {
+      return JSON.parse(aiResponse);
+    } catch {
+      // Fallback if AI response isn't valid JSON
+      return classifyIntent(text);
+    }
   } catch (error) {
-    console.error('MCP Error:', error);
+    console.error('OpenAI classification error:', error);
+    return classifyIntent(text);
+  }
+}
+
+// GEKKO API integration for real building controls
+async function callGekkoAPI(endpoint: string, params: any = {}) {
+  try {
+    const response = await supabase.functions.invoke('gekko-proxy', {
+      body: { endpoint, params }
+    });
+    
+    if (response.error) {
+      throw new Error(`GEKKO API error: ${response.error.message}`);
+    }
+    
+    return response.data;
+  } catch (error) {
+    console.error('GEKKO API Error:', error);
     throw new Error('Failed to connect to building control system');
   }
 }
@@ -164,196 +215,228 @@ function classifyIntent(text: string): { intent: string; confidence: number; par
   };
 }
 
-// Validate and execute set_point commands
+// Execute set_point commands via GEKKO API
 async function executeSetPoint(params: any): Promise<{ success: boolean; message: string; data?: any }> {
-  const { type, value, room, unit } = params;
-  
-  // Find matching point in database
-  const { data: points, error } = await supabase
-    .from('points')
-    .select('*')
-    .eq('type', type)
-    .ilike('room', `%${room}%`)
-    .eq('is_controllable', true);
-    
-  if (error || !points || points.length === 0) {
-    return {
-      success: false,
-      message: `No controllable ${type} found in ${room}`
-    };
-  }
-  
-  const point = points[0];
-  
-  // Validate value range
-  if (point.min_value !== null && value < point.min_value) {
-    return {
-      success: false,
-      message: `Value ${value} is below minimum ${point.min_value}${point.unit}`
-    };
-  }
-  
-  if (point.max_value !== null && value > point.max_value) {
-    return {
-      success: false,
-      message: `Value ${value} is above maximum ${point.max_value}${point.unit}`
-    };
-  }
+  const { type, value, room } = params;
   
   try {
-    // Call MCP to set the point
-    const mcpResponse = await callMCP('set_point', {
-      point: point.point_id,
-      value: value.toString()
-    });
-    
-    if (mcpResponse.success) {
-      // Update database with new value
-      await supabase
-        .from('points')
-        .update({
-          current_value: value.toString(),
-          last_updated: new Date().toISOString()
-        })
-        .eq('id', point.id);
+    // For temperature control
+    if (type === 'temperature') {
+      if (value < 15 || value > 30) {
+        return {
+          success: false,
+          message: `Temperature ${value}°C is outside safe range (15-30°C)`
+        };
+      }
       
-      // Log to history
-      await supabase
-        .from('point_history')
-        .insert({
-          point_id: point.point_id,
-          value: value.toString(),
-          source: 'voice'
-        });
+      // Call GEKKO temperature control
+      const gekkoResponse = await callGekkoAPI('setTemperature', { 
+        room: room || 'office', 
+        temperature: value 
+      });
       
       return {
         success: true,
-        message: `Set ${point.name} to ${value}${point.unit}`,
-        data: { point: point.name, value, unit: point.unit }
-      };
-    } else {
-      return {
-        success: false,
-        message: `Failed to set ${point.name}: ${mcpResponse.error || 'Unknown error'}`
+        message: `Set ${room || 'office'} temperature to ${value}°C`,
+        data: { room, value, unit: '°C', gekkoResponse }
       };
     }
-  } catch (error) {
+    
+    // For light control
+    if (type === 'light') {
+      if (value < 0 || value > 100) {
+        return {
+          success: false,
+          message: `Light level ${value}% is outside range (0-100%)`
+        };
+      }
+      
+      // Call GEKKO light control
+      const gekkoResponse = await callGekkoAPI('setLight', { 
+        room: room || 'lobby', 
+        brightness: value 
+      });
+      
+      return {
+        success: true,
+        message: `Set ${room || 'lobby'} light to ${value}%`,
+        data: { room, value, unit: '%', gekkoResponse }
+      };
+    }
+    
     return {
       success: false,
-      message: `Error setting ${point.name}: ${error.message}`
+      message: `Control type '${type}' not supported. Try temperature or light.`
+    };
+    
+  } catch (error) {
+    console.error('Set point error:', error);
+    return {
+      success: false,
+      message: `Failed to set ${type}: ${error.message}`
     };
   }
 }
 
-// Execute read_point commands
+// Execute read_point commands via GEKKO API and database
 async function executeReadPoint(params: any): Promise<{ success: boolean; message: string; data?: any }> {
   const { type, room } = params;
   
-  // Find matching point in database
-  const { data: points, error } = await supabase
-    .from('points')
-    .select('*')
-    .eq('type', type)
-    .ilike('room', `%${room}%`);
-    
-  if (error || !points || points.length === 0) {
-    return {
-      success: false,
-      message: `No ${type} sensor found in ${room}`
-    };
-  }
-  
-  const point = points[0];
-  
   try {
-    // Call MCP to read current value
-    const mcpResponse = await callMCP('read_point', {
-      point: point.point_id
-    });
+    // Read energy data
+    if (type === 'energy' || type === 'consumption') {
+      const { data: energyData, error } = await supabase
+        .from('energy_readings')
+        .select('*')
+        .order('recorded_at', { ascending: false })
+        .limit(1);
+      
+      if (energyData && energyData.length > 0) {
+        const latest = energyData[0];
+        return {
+          success: true,
+          message: `Current energy: ${latest.current_power?.toFixed(1)} kW, Daily: ${latest.daily_energy?.toFixed(1)} kWh, Solar: ${latest.pv_power?.toFixed(1)} kW`,
+          data: latest
+        };
+      }
+    }
     
-    if (mcpResponse.success && mcpResponse.data) {
-      let currentValue = mcpResponse.data.value || point.current_value;
-      
-      // Update database with fresh value
-      await supabase
-        .from('points')
-        .update({
-          current_value: currentValue,
-          last_updated: new Date().toISOString()
-        })
-        .eq('id', point.id);
-      
+    // Read temperature via GEKKO
+    if (type === 'temperature') {
+      const gekkoResponse = await callGekkoAPI('getTemperature', { room: room || 'office' });
       return {
         success: true,
-        message: `${point.name} is currently ${currentValue}${point.unit}`,
-        data: { point: point.name, value: currentValue, unit: point.unit }
-      };
-    } else {
-      // Fall back to database value
-      return {
-        success: true,
-        message: `${point.name} was last recorded at ${point.current_value}${point.unit}`,
-        data: { point: point.name, value: point.current_value, unit: point.unit }
+        message: `${room || 'Office'} temperature is ${gekkoResponse.temperature}°C`,
+        data: { room, temperature: gekkoResponse.temperature, unit: '°C' }
       };
     }
-  } catch (error) {
-    return {
-      success: false,
-      message: `Error reading ${point.name}: ${error.message}`
-    };
-  }
-}
-
-// Execute list_points command
-async function executeListPoints(): Promise<{ success: boolean; message: string; data?: any }> {
-  const { data: points, error } = await supabase
-    .from('points')
-    .select('name, room, type, unit, is_controllable, current_value')
-    .order('room', { ascending: true });
     
-  if (error) {
+    // Read light status via GEKKO  
+    if (type === 'light') {
+      const gekkoResponse = await callGekkoAPI('getLight', { room: room || 'lobby' });
+      return {
+        success: true,
+        message: `${room || 'Lobby'} light is at ${gekkoResponse.brightness}%`,
+        data: { room, brightness: gekkoResponse.brightness, unit: '%' }
+      };
+    }
+    
+    // Fallback: check database points
+    const { data: points, error } = await supabase
+      .from('points')
+      .select('*')
+      .eq('type', type)
+      .ilike('room', `%${room || ''}%`)
+      .order('last_updated', { ascending: false })
+      .limit(1);
+      
+    if (points && points.length > 0) {
+      const point = points[0];
+      return {
+        success: true,
+        message: `${point.name} is ${point.current_value}${point.unit || ''}`,
+        data: point
+      };
+    }
+    
     return {
       success: false,
-      message: "Error retrieving points list"
+      message: `No ${type} data found for ${room || 'any room'}`
+    };
+    
+  } catch (error) {
+    console.error('Read point error:', error);
+    return {
+      success: false,
+      message: `Error reading ${type}: ${error.message}`
     };
   }
-  
-  const controllablePoints = points?.filter(p => p.is_controllable) || [];
-  const sensorPoints = points?.filter(p => !p.is_controllable) || [];
-  
-  let message = `Found ${points?.length || 0} points. `;
-  
-  if (controllablePoints.length > 0) {
-    message += `Controllable: ${controllablePoints.map(p => `${p.name} (${p.current_value}${p.unit})`).join(', ')}. `;
-  }
-  
-  if (sensorPoints.length > 0) {
-    message += `Sensors: ${sensorPoints.map(p => `${p.name} (${p.current_value}${p.unit})`).join(', ')}.`;
-  }
-  
-  return {
-    success: true,
-    message,
-    data: { controllable: controllablePoints, sensors: sensorPoints }
-  };
 }
 
-// Execute health check
+// Execute energy_analysis command
+async function executeEnergyAnalysis(params: any): Promise<{ success: boolean; message: string; data?: any }> {
+  try {
+    // Get recent energy data
+    const { data: energyData, error } = await supabase
+      .from('energy_readings')
+      .select('*')
+      .gte('recorded_at', new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString())
+      .order('recorded_at', { ascending: false });
+    
+    if (error || !energyData || energyData.length === 0) {
+      return {
+        success: false,
+        message: "No recent energy data available for analysis"
+      };
+    }
+
+    // Call the AI analysis function
+    const analysisResponse = await supabase.functions.invoke('energy-ai-analysis-simple', {
+      body: { analysis_type: 'consumption_summary' }
+    });
+
+    if (analysisResponse.error) {
+      // Fallback to basic analysis
+      const latest = energyData[0];
+      const avgPower = energyData.reduce((sum, r) => sum + (r.current_power || 0), 0) / energyData.length;
+      const totalDaily = energyData.reduce((sum, r) => sum + (r.daily_energy || 0), 0) / energyData.length;
+      
+      return {
+        success: true,
+        message: `Energy Summary: Current power ${latest.current_power?.toFixed(1)} kW, 24h average ${avgPower.toFixed(1)} kW, daily total ${totalDaily.toFixed(1)} kWh`,
+        data: { current_power: latest.current_power, avg_power: avgPower, daily_total: totalDaily }
+      };
+    }
+
+    const analysis = analysisResponse.data;
+    return {
+      success: true,
+      message: `Energy Analysis: ${analysis.summary || 'Analysis complete'}`,
+      data: analysis
+    };
+    
+  } catch (error) {
+    console.error('Energy analysis error:', error);
+    return {
+      success: false,
+      message: `Energy analysis failed: ${error.message}`
+    };
+  }
+}
+
+// Execute system health check
 async function executeHealth(): Promise<{ success: boolean; message: string; data?: any }> {
   try {
-    const mcpResponse = await callMCP('health');
-    
-    // Also check database connectivity
-    const { count } = await supabase
+    // Check database connectivity
+    const { count: pointsCount } = await supabase
       .from('points')
       .select('*', { count: 'exact', head: true });
+      
+    const { count: energyCount } = await supabase
+      .from('energy_readings')
+      .select('*', { count: 'exact', head: true });
+
+    // Check GEKKO API connectivity
+    let gekkoStatus = 'Unknown';
+    try {
+      const gekkoResponse = await callGekkoAPI('status', {});
+      gekkoStatus = gekkoResponse ? 'Connected' : 'Disconnected';
+    } catch {
+      gekkoStatus = 'Disconnected';
+    }
     
     return {
       success: true,
-      message: `System is operational. Database has ${count} points configured. MCP connection: ${mcpResponse.success ? 'OK' : 'Error'}`,
-      data: { dbPoints: count, mcpStatus: mcpResponse.success }
+      message: `System Status: Database has ${pointsCount} points and ${energyCount} energy readings. GEKKO API: ${gekkoStatus}`,
+      data: { 
+        database_points: pointsCount, 
+        energy_readings: energyCount,
+        gekko_status: gekkoStatus,
+        timestamp: new Date().toISOString()
+      }
     };
   } catch (error) {
+    console.error('Health check error:', error);
     return {
       success: false,
       message: `System health check failed: ${error.message}`
@@ -416,8 +499,8 @@ serve(async (req) => {
     
     const startTime = Date.now();
     
-    // Classify intent
-    const { intent, confidence, params } = classifyIntent(text);
+    // Classify intent with AI enhancement
+    const { intent, confidence, params } = await classifyIntentWithAI(text);
     
     console.log(`Intent: ${intent}, Confidence: ${confidence}, Params:`, params);
     
@@ -431,19 +514,22 @@ serve(async (req) => {
       case 'read_point':
         result = await executeReadPoint(params);
         break;
-      case 'list_points':
-        result = await executeListPoints();
+      case 'energy_analysis':
+        result = await executeEnergyAnalysis(params);
         break;
-      case 'health':
+      case 'system_health':
         result = await executeHealth();
         break;
-      case 'history':
-        result = await executeHistory(params);
+      case 'help':
+        result = {
+          success: true,
+          message: "I can help you control your smart building. Try: 'set office temperature to 22', 'what's the energy consumption', 'system status', or 'energy analysis'."
+        };
         break;
       default:
         result = {
           success: false,
-          message: "I didn't understand that command. Try 'set office temperature to 22', 'what is lobby light status', or 'list all points'."
+          message: "I didn't understand that command. Try 'set office temperature to 22', 'what's the energy consumption', 'system status', or say 'help' for more options."
         };
     }
     
