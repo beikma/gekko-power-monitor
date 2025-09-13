@@ -12,7 +12,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 export function SolarForecastCard() {
   const { data, isLoading, error, fetchSolarForecast, hasData, dailyOutput, peakOutput, systemCapacity } = useSolarForecast();
   
-  const [location, setLocation] = useState({ lat: 46.4983, lng: 11.3548 }); // Bolzano default
+  const [location, setLocation] = useState({ lat: 46.7944, lng: 11.9464 }); // Bruneck, St. Lorenzner Straße 2
   const [systemConfig, setSystemConfig] = useState({
     capacity: 10,
     tilt: 30,

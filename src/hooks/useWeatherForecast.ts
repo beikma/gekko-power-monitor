@@ -95,9 +95,9 @@ export function useWeatherForecast() {
   }, []);
 
   // Helper function to get weather for common locations
-  const fetchWeatherForLocation = useCallback((location: 'bolzano' | 'london' | 'berlin' | 'custom', customLat?: number, customLng?: number) => {
+  const fetchWeatherForLocation = useCallback((location: 'bruneck' | 'london' | 'berlin' | 'custom', customLat?: number, customLng?: number) => {
     const coordinates = {
-      bolzano: { lat: 46.4983, lng: 11.3548 },
+      bruneck: { lat: 46.7944, lng: 11.9464 }, // Bruneck, St. Lorenzner Straße 2
       london: { lat: 51.5074, lng: -0.1278 },
       berlin: { lat: 52.5200, lng: 13.4050 }
     };

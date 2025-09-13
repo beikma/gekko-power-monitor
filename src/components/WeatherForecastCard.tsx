@@ -9,7 +9,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 export function WeatherForecastCard() {
   const { data, isLoading, error, fetchWeatherForLocation, hasData } = useWeatherForecast();
-  const [selectedLocation, setSelectedLocation] = useState<'bolzano' | 'london' | 'berlin'>('bolzano');
+  const [selectedLocation, setSelectedLocation] = useState<'bruneck' | 'london' | 'berlin'>('bruneck');
 
   const handleFetchWeather = () => {
     fetchWeatherForLocation(selectedLocation);
@@ -50,7 +50,7 @@ export function WeatherForecastCard() {
             onChange={(e) => setSelectedLocation(e.target.value as any)}
             className="px-3 py-1 border rounded-md"
           >
-            <option value="bolzano">Bolzano, Italy</option>
+            <option value="bruneck">Bruneck, Italy</option>
             <option value="london">London, UK</option>
             <option value="berlin">Berlin, Germany</option>
           </select>
