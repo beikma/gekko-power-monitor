@@ -85,19 +85,36 @@ export function SocketAnalyzer() {
 
   const testSocket = async (socketId: string, command: 'on' | 'off') => {
     try {
-      const value = command === 'on' ? '1' : '0'; // For lights: 1 = On, 0 = Off
+      const value = command === 'on' ? '1' : '0';
       
-      // Use correct myGEKKO API format: /scmd/set with GET request
+      // First get device info to find the correct index
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
+      const baseParams = new URLSearchParams({
+        username: 'mustermann@my-gekko.com',
+        key: 'HjR9j4BrruA8wZiBeiWXnD',
+        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
+      });
+
+      // Get device info to find scmd index
+      const infoResponse = await fetch(`${proxyUrl}?endpoint=var&${baseParams}`);
+      const infoData = await infoResponse.json();
+      
+      const deviceIndex = infoData.lights?.[socketId]?.scmd?.index;
+      if (!deviceIndex) {
+        throw new Error(`Could not find command index for ${socketId}`);
+      }
+
+      // Send command using var/scmd with index
       const cmdParams = new URLSearchParams({
-        endpoint: `lights/${socketId}/scmd/set`,
+        endpoint: 'var/scmd',
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
+        index: deviceIndex.toString(),
         value: value
       });
 
-      console.log(`🚀 Correct API call to lights/${socketId}/scmd/set with value=${value}`);
+      console.log(`🚀 Command API call: var/scmd with index=${deviceIndex}, value=${value}`);
       const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       
