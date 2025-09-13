@@ -5,14 +5,18 @@ import { ClimateWidget } from "@/components/widgets/ClimateWidget";
 import { SecurityStatusWidget } from "@/components/widgets/SecurityStatusWidget";
 import { SystemAlarmsWidget } from "@/components/widgets/SystemAlarmsWidget";
 import { LightingControlWidget } from "@/components/widgets/LightingControlWidget";
+import { BuildingInfoWidget } from "@/components/widgets/BuildingInfoWidget";
+import { WeatherWidget } from "@/components/widgets/WeatherWidget";
 import { 
   Zap, 
   Thermometer, 
+  Lightbulb,
   Shield, 
   AlertTriangle, 
-  Lightbulb,
   Activity,
-  Settings
+  Settings,
+  Building,
+  Cloud
 } from "lucide-react";
 
 // Widget Categories for organization
@@ -52,6 +56,18 @@ export const WIDGET_CATEGORIES: WidgetCategory[] = [
     title: 'Device Control',
     description: 'Direct control of connected devices',
     icon: Settings
+  },
+  {
+    id: 'building',
+    title: 'Building Information',
+    description: 'Building profile, location, and system details',
+    icon: Building
+  },
+  {
+    id: 'environmental',
+    title: 'Environmental Data',
+    description: 'Weather, outdoor conditions, and forecasts',
+    icon: Cloud
   }
 ];
 
@@ -110,6 +126,42 @@ export const AVAILABLE_WIDGETS: Omit<WidgetConfig, 'enabled' | 'position' | 'ord
     size: 'medium',
     component: LightingControlWidget,
     requiredData: ['lighting']
+  },
+  {
+    id: 'building-info-small',
+    title: 'Building Info',
+    description: 'Quick building overview with status',
+    category: 'building',
+    size: 'small',
+    component: BuildingInfoWidget,
+    requiredData: []
+  },
+  {
+    id: 'building-info-medium',
+    title: 'Building Profile',
+    description: 'Detailed building information and system status',
+    category: 'building',
+    size: 'medium',
+    component: BuildingInfoWidget,
+    requiredData: []
+  },
+  {
+    id: 'weather-small',
+    title: 'Weather',
+    description: 'Current weather conditions',
+    category: 'environmental',
+    size: 'small',
+    component: WeatherWidget,
+    requiredData: []
+  },
+  {
+    id: 'weather-medium',
+    title: 'Weather Details',
+    description: 'Detailed weather information and forecast',
+    category: 'environmental',
+    size: 'medium',
+    component: WeatherWidget,
+    requiredData: []
   }
 ];
 
@@ -122,28 +174,34 @@ export const DEFAULT_DASHBOARD_LAYOUT: WidgetConfig[] = [
     order: 1
   },
   {
-    ...AVAILABLE_WIDGETS[1], // Climate Status
+    ...AVAILABLE_WIDGETS[2], // Climate Status
     enabled: true,
     position: { x: 1, y: 0 },
     order: 2
   },
   {
-    ...AVAILABLE_WIDGETS[2], // Security Status
+    ...AVAILABLE_WIDGETS[3], // Security Status
     enabled: true,
     position: { x: 2, y: 0 },
     order: 3
   },
   {
-    ...AVAILABLE_WIDGETS[3], // System Alarms
+    ...AVAILABLE_WIDGETS[6], // Building Info Small
     enabled: true,
-    position: { x: 0, y: 1 },
+    position: { x: 3, y: 0 },
     order: 4
   },
   {
-    ...AVAILABLE_WIDGETS[4], // Lighting Control
+    ...AVAILABLE_WIDGETS[4], // System Alarms
+    enabled: true,
+    position: { x: 0, y: 1 },
+    order: 5
+  },
+  {
+    ...AVAILABLE_WIDGETS[8], // Weather Small
     enabled: true,
     position: { x: 1, y: 1 },
-    order: 5
+    order: 6
   }
 ];
 

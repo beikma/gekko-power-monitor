@@ -2,7 +2,7 @@ export interface WidgetConfig {
   id: string;
   title: string;
   description: string;
-  category: 'energy' | 'climate' | 'lighting' | 'security' | 'monitoring' | 'control';
+  category: 'energy' | 'climate' | 'lighting' | 'security' | 'monitoring' | 'control' | 'building' | 'environmental';
   size: 'small' | 'medium' | 'large' | 'full';
   enabled: boolean;
   position: { x: number; y: number };

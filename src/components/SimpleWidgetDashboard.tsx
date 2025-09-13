@@ -11,7 +11,10 @@ import {
   TrendingUp,
   TrendingDown,
   Settings,
-  RefreshCw
+  RefreshCw,
+  Building,
+  MapPin,
+  Wifi
 } from "lucide-react";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
 
@@ -282,29 +285,46 @@ export function SimpleWidgetDashboard() {
           </CardContent>
         </Card>
 
-        {/* System Status Widget */}
+        {/* Building Info Widget - Small */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-              System Status
+              <Building className="h-4 w-4 text-energy-secondary" />
+              Building Info
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {isLoading ? (
               <div className="animate-pulse space-y-2">
-                <div className="h-6 bg-muted rounded"></div>
+                <div className="h-16 bg-muted rounded"></div>
                 <div className="h-4 bg-muted rounded"></div>
               </div>
             ) : (
               <>
-                <div className="text-center py-2">
-                  <p className="text-sm text-energy-success font-medium">All Systems Normal</p>
-                  <p className="text-xs text-muted-foreground">No active alarms</p>
+                <div className="h-16 bg-gradient-to-br from-energy-primary/20 to-energy-secondary/20 rounded-lg flex items-center justify-center">
+                  <Building className="h-6 w-6 text-energy-primary" />
                 </div>
-                <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground">Last Check</span>
-                  <span className="font-medium">{new Date().toLocaleTimeString()}</span>
+                
+                <div className="space-y-2">
+                  <div className="flex items-center gap-1 text-sm">
+                    <MapPin className="h-3 w-3 text-muted-foreground" />
+                    <span className="text-muted-foreground truncate">Smart Home</span>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Energy Class</span>
+                    <Badge className="text-xs text-white bg-green-500">
+                      A+
+                    </Badge>
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs text-muted-foreground">Status</span>
+                    <Badge variant={connectionStatus === 'connected' ? 'default' : 'destructive'} className="text-xs">
+                      <Wifi className="h-2 w-2 mr-1" />
+                      {connectionStatus === 'connected' ? 'Online' : 'Offline'}
+                    </Badge>
+                  </div>
                 </div>
               </>
             )}

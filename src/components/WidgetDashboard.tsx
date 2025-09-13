@@ -62,6 +62,28 @@ export function WidgetDashboard({ onOpenSettings }: WidgetDashboardProps) {
       total: status?.lighting?.total || 12,
       autoMode: false
     },
+    building: {
+      name: 'Smart Home',
+      address: '123 Smart Street, Tech City',
+      type: 'Residential',
+      yearBuilt: 2020,
+      area: 180,
+      rooms: 6,
+      floors: 2,
+      energyClass: 'A+',
+      gekkoId: 'K999-7UOZ-8ZYZ-6TH3',
+      connectionStatus: connectionStatus
+    },
+    weather: {
+      temperature: 22,
+      condition: 'partly-cloudy',
+      humidity: 65,
+      windSpeed: 12,
+      visibility: 10,
+      pressure: 1013,
+      uvIndex: 5,
+      location: 'Current Location'
+    },
     alarms: status?.alarms || []
   };
 

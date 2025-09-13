@@ -1,5 +1,10 @@
-import { SimpleWidgetDashboard } from "@/components/SimpleWidgetDashboard";
+import { WidgetDashboard } from "@/components/WidgetDashboard";
 
 export default function Dashboard() {
-  return <SimpleWidgetDashboard />;
+  const handleOpenSettings = () => {
+    // Navigate to configuration page
+    window.location.href = '/configuration';
+  };
+
+  return <WidgetDashboard onOpenSettings={handleOpenSettings} />;
 }
