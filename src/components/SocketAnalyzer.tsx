@@ -67,7 +67,7 @@ export function SocketAnalyzer() {
         
         toast({
           title: "Socket Analysis Complete",
-          description: `Found ${socketList.length} sockets: ${normallyOn} ON, ${forcedOn} FORCED ON`,
+          description: `Found ${socketList.length} sockets: ${normallyOn} ON, ${forcedOn} FORCED ON${socketList.filter(s => s.status === 'ON').length === 1 ? ` - ${socketList.find(s => s.status === 'ON')?.id.toUpperCase()} appears to be your garage!` : ''}`,
         });
       }
       
