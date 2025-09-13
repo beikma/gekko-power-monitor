@@ -110,23 +110,57 @@ export function SocketAnalyzer() {
         throw new Error(`Could not find command index for ${socketId}`);
       }
 
-      // Send command using var/scmd with index
-      const cmdParams = new URLSearchParams({
-        endpoint: 'var/scmd',
-        username: 'mustermann@my-gekko.com',
-        key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        index: deviceIndex.toString(),
-        value: value
-      });
+      // Try multiple command formats to see which one works
+      let success = false;
+      
+      // Method 1: var/scmd with index
+      try {
+        const cmdParams1 = new URLSearchParams({
+          endpoint: 'var/scmd',
+          username: 'mustermann@my-gekko.com',
+          key: 'HjR9j4BrruA8wZiBeiWXnD',
+          gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
+          index: deviceIndex.toString(),
+          value: value
+        });
 
-      console.log(`🚀 Command API call: var/scmd with index=${deviceIndex}, value=${value}`);
-      const response = await fetch(`${proxyUrl}?${cmdParams}`);
-      const responseText = await response.text();
+        console.log(`🚀 Trying Method 1: var/scmd with index=${deviceIndex}, value=${value}`);
+        const response1 = await fetch(`${proxyUrl}?${cmdParams1}`);
+        const responseText1 = await response1.text();
+        console.log(`📡 Method 1 Response → ${response1.status}: ${responseText1}`);
+        
+        if (response1.ok && responseText1 !== '{"error":"API Error: 400"}') {
+          success = true;
+        }
+      } catch (error) {
+        console.log(`❌ Method 1 failed:`, error);
+      }
+
+      // Method 2: lights-specific command if Method 1 didn't work
+      if (!success) {
+        try {
+          const cmdParams2 = new URLSearchParams({
+            endpoint: `lights/${socketId}/scmd`,
+            username: 'mustermann@my-gekko.com',
+            key: 'HjR9j4BrruA8wZiBeiWXnD',
+            gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
+            value: value
+          });
+
+          console.log(`🚀 Trying Method 2: lights/${socketId}/scmd with value=${value}`);
+          const response2 = await fetch(`${proxyUrl}?${cmdParams2}`);
+          const responseText2 = await response2.text();
+          console.log(`📡 Method 2 Response → ${response2.status}: ${responseText2}`);
+          
+          if (response2.ok && responseText2 !== '{"error":"API Error: 400"}') {
+            success = true;
+          }
+        } catch (error) {
+          console.log(`❌ Method 2 failed:`, error);
+        }
+      }
       
-      console.log(`📡 API Response → ${response.status}: ${responseText}`);
-      
-      if (response.ok) {
+      if (success) {
         toast({
           title: `${socketId.toUpperCase()} ${command.toUpperCase()}`,
           description: `Success! Socket ${command === 'on' ? 'turned on permanently' : 'turned off'}`,
@@ -137,7 +171,7 @@ export function SocketAnalyzer() {
           fetchSocketData();
         }, 2000);
       } else {
-        throw new Error(`HTTP ${response.status} - ${responseText}`);
+        throw new Error('All command methods failed');
       }
     } catch (error) {
       console.error(`❌ Socket command failed for ${socketId}:`, error);

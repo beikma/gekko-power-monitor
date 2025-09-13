@@ -45,17 +45,28 @@ serve(async (req) => {
 
     // Handle command execution - use the correct myGEKKO API format
     if (endpoint === 'var/scmd' && index && value !== null) {
-      // Standard command execution via var/scmd with index parameter
+      // Try different command formats - myGEKKO might need specific command format
       gekkoParams.append('index', index);
       gekkoParams.append('value', value);
-      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      gekkoUrl = `https://live.my-gekko.com/api/v1/var/${endpoint}?${gekkoParams}`;
       requestOptions.method = 'GET';
+      
+      console.log(`🔧 Trying var/scmd format: index=${index}, value=${value}`);
     } else if (endpoint === 'scmd' && index && value !== null) {
-      // Direct scmd endpoint with index
+      // Alternative: Direct scmd endpoint
       gekkoParams.append('index', index);
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
       requestOptions.method = 'GET';
+      
+      console.log(`🔧 Trying direct scmd format: index=${index}, value=${value}`);
+    } else if (endpoint.includes('lights/') && endpoint.includes('/scmd') && value !== null) {
+      // Try lights-specific command format
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/var/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+      
+      console.log(`🔧 Trying lights/scmd format: ${endpoint}, value=${value}`);
     } else {
       // For regular GET requests (status, info, etc.)
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
