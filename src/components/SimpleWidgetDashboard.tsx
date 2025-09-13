@@ -14,7 +14,8 @@ import {
   RefreshCw,
   Building,
   MapPin,
-  Wifi
+  Wifi,
+  Brain
 } from "lucide-react";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
 
@@ -333,13 +334,23 @@ export function SimpleWidgetDashboard() {
       </div>
 
       {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card className="p-4 hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => window.location.href = '/energy'}>
           <div className="flex items-center gap-3">
             <Zap className="h-8 w-8 text-energy-primary" />
             <div>
               <h3 className="font-semibold">Energy Details</h3>
               <p className="text-sm text-muted-foreground">View detailed energy analytics</p>
+            </div>
+          </div>
+        </Card>
+
+        <Card className="p-4 hover:bg-muted/50 cursor-pointer transition-colors" onClick={() => window.location.href = '/ai'}>
+          <div className="flex items-center gap-3">
+            <Brain className="h-8 w-8 text-purple-500" />
+            <div>
+              <h3 className="font-semibold">AI & ML Analytics</h3>
+              <p className="text-sm text-muted-foreground">Advanced AI insights and forecasting</p>
             </div>
           </div>
         </Card>

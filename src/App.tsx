@@ -8,6 +8,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import EnergyDetailsDashboard from "./components/EnergyDetailsDashboard";
+import AI from "./pages/AI";
 import Configuration from "./pages/Configuration";
 import BuildingProfile from "./components/BuildingProfile";
 import Admin from "./pages/Admin";
@@ -35,6 +36,12 @@ const App: React.FC = () => {
             <Route path="/energy" element={
               <DashboardLayout>
                 <EnergyDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/ai" element={
+              <DashboardLayout>
+                <AI />
               </DashboardLayout>
             } />
             

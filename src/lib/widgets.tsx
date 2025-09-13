@@ -7,6 +7,8 @@ import { SystemAlarmsWidget } from "@/components/widgets/SystemAlarmsWidget";
 import { LightingControlWidget } from "@/components/widgets/LightingControlWidget";
 import { BuildingInfoWidget } from "@/components/widgets/BuildingInfoWidget";
 import { WeatherWidget } from "@/components/widgets/WeatherWidget";
+import { AIInsightsWidget } from "@/components/widgets/AIInsightsWidget";
+import { EnergyForecastWidget } from "@/components/widgets/EnergyForecastWidget";
 import { 
   Zap, 
   Thermometer, 
@@ -16,7 +18,9 @@ import {
   Activity,
   Settings,
   Building,
-  Cloud
+  Cloud,
+  Brain,
+  TrendingUp
 } from "lucide-react";
 
 // Widget Categories for organization
@@ -68,6 +72,12 @@ export const WIDGET_CATEGORIES: WidgetCategory[] = [
     title: 'Environmental Data',
     description: 'Weather, outdoor conditions, and forecasts',
     icon: Cloud
+  },
+  {
+    id: 'ai',
+    title: 'AI & Machine Learning',
+    description: 'Intelligent insights, forecasting, and analysis',
+    icon: Brain
   }
 ];
 
@@ -162,6 +172,42 @@ export const AVAILABLE_WIDGETS: Omit<WidgetConfig, 'enabled' | 'position' | 'ord
     size: 'medium',
     component: WeatherWidget,
     requiredData: []
+  },
+  {
+    id: 'ai-insights-small',
+    title: 'AI Insights',
+    description: 'Quick AI analysis and recommendations',
+    category: 'ai',
+    size: 'small',
+    component: AIInsightsWidget,
+    requiredData: []
+  },
+  {
+    id: 'ai-insights-medium',
+    title: 'AI Energy Insights',
+    description: 'Comprehensive AI analysis with recommendations',
+    category: 'ai',
+    size: 'medium',
+    component: AIInsightsWidget,
+    requiredData: []
+  },
+  {
+    id: 'energy-forecast-small',
+    title: 'Energy Forecast',
+    description: 'Quick energy consumption predictions',
+    category: 'ai',
+    size: 'small',
+    component: EnergyForecastWidget,
+    requiredData: []
+  },
+  {
+    id: 'energy-forecast-medium',
+    title: 'Energy Forecast Details',
+    description: 'Detailed AI-powered energy forecasting',
+    category: 'ai',
+    size: 'medium',
+    component: EnergyForecastWidget,
+    requiredData: []
   }
 ];
 
@@ -180,7 +226,7 @@ export const DEFAULT_DASHBOARD_LAYOUT: WidgetConfig[] = [
     order: 2
   },
   {
-    ...AVAILABLE_WIDGETS[3], // Security Status
+    ...AVAILABLE_WIDGETS[9], // AI Insights Small
     enabled: true,
     position: { x: 2, y: 0 },
     order: 3
@@ -198,7 +244,7 @@ export const DEFAULT_DASHBOARD_LAYOUT: WidgetConfig[] = [
     order: 5
   },
   {
-    ...AVAILABLE_WIDGETS[8], // Weather Small
+    ...AVAILABLE_WIDGETS[11], // Energy Forecast Small
     enabled: true,
     position: { x: 1, y: 1 },
     order: 6

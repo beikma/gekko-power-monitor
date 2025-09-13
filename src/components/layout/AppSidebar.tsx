@@ -11,7 +11,8 @@ import {
   Activity,
   MessageSquare,
   Upload,
-  Wrench
+  Wrench,
+  Brain
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -31,6 +32,7 @@ import {
 const mainItems = [
   { title: "Dashboard", url: "/", icon: Home },
   { title: "Energy", url: "/energy", icon: Zap },
+  { title: "AI & ML", url: "/ai", icon: Brain },
   { title: "Control", url: "/control", icon: Settings },
 ];
 
