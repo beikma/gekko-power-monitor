@@ -1,0 +1,5 @@
+-- Insert sample Teams configurations for testing
+INSERT INTO public.teams_configuration (name, webhook_url, notification_types, severity_levels, user_roles, is_active) VALUES
+('Facility Management Team', 'https://outlook.office.com/webhook/sample-facility-team', ARRAY['heating', 'hardware', 'configuration'], ARRAY['critical', 'high', 'medium'], ARRAY['facility_manager', 'building_admin'], true),
+('Emergency Response Team', 'https://outlook.office.com/webhook/sample-emergency-team', ARRAY['security', 'hardware'], ARRAY['critical', 'high'], ARRAY['security_team', 'facility_manager'], true),
+('Maintenance Team', 'https://outlook.office.com/webhook/sample-maintenance-team', ARRAY['heating', 'hardware'], ARRAY['critical', 'high', 'medium'], ARRAY['maintenance_team', 'service_technician'], true);
