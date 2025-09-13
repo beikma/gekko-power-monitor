@@ -43,8 +43,13 @@ serve(async (req) => {
       method: req.method,
     };
 
-    // Handle different command formats - prioritize /set endpoints for loads/sockets
-    if (endpoint.includes('/set') && value !== null) {
+    // Handle different command formats - prioritize direct light commands
+    if (endpoint.includes('lights/') && endpoint.includes('/scmd') && value !== null) {
+      // Direct light commands (e.g., lights/item0/scmd)
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/var/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+    } else if (endpoint.includes('/set') && value !== null) {
       // Individual socket/load commands with /set endpoint (e.g., var/loads/item15/set)
       gekkoParams.append('value', value);
       gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;

@@ -108,41 +108,19 @@ export function useGarageSocket() {
     });
     
     try {
-      // Get command indices from the lights section (some devices may be there)
+      // Use direct command approach for lights  
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      const infoParams = new URLSearchParams({
-        endpoint: 'var',
-        username: 'mustermann@my-gekko.com',
-        key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
-      });
-
-      console.log(`🔍 Getting API data for ${socket.id}...`);
-      const infoResponse = await fetch(`${proxyUrl}?${infoParams}`);
-      const apiData = await infoResponse.json();
-      
-      if (!infoResponse.ok) {
-        throw new Error(`Failed to get API data`);
-      }
-
-      // Look for the socket in lights section
-      const lightItem = apiData.lights?.[socket.id];
-      if (!lightItem?.scmd?.index) {
-        throw new Error(`No command index found for ${socket.id} - may not be controllable`);
-      }
-
-      // Execute command using the lights command index
       const value = newState ? '1' : '0'; // For lights: 1 = On, 0 = Off
+      
       const cmdParams = new URLSearchParams({
-        endpoint: 'var/scmd',
+        endpoint: `lights/${socket.id}/scmd`,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        index: lightItem.scmd.index,
         value: value
       });
 
-      console.log(`🚀 Executing: index=${lightItem.scmd.index}, value=${value}`);
+      console.log(`🚀 Direct command to lights/${socket.id}/scmd with value=${value}`);
       const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;

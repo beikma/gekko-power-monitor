@@ -87,42 +87,17 @@ export function SocketAnalyzer() {
     try {
       const value = command === 'on' ? '1' : '0'; // For lights: 1 = On, 0 = Off
       
-      // Use lights section instead of loads - lights have proper command indices
+      // Use direct command approach - bypass the index lookup
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      
-      // First, get the command index from lights section
-      const infoParams = new URLSearchParams({
-        endpoint: 'var',
-        username: 'mustermann@my-gekko.com',
-        key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
-      });
-
-      console.log(`🔍 Getting command info for lights/${socketId}...`);
-      const infoResponse = await fetch(`${proxyUrl}?${infoParams}`);
-      const apiData = await infoResponse.json();
-      
-      if (!infoResponse.ok) {
-        throw new Error(`Failed to get API data`);
-      }
-
-      // Look for the socket in lights section (some sockets might be categorized as lights)
-      const lightItem = apiData.lights?.[socketId];
-      if (!lightItem?.scmd?.index) {
-        throw new Error(`No command index found for ${socketId} in lights section`);
-      }
-
-      // Execute command using the lights command index
       const cmdParams = new URLSearchParams({
-        endpoint: 'var/scmd',
+        endpoint: `lights/${socketId}/scmd`,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        index: lightItem.scmd.index,
         value: value
       });
 
-      console.log(`🚀 Executing command: index=${lightItem.scmd.index}, value=${value}`);
+      console.log(`🚀 Direct command to lights/${socketId}/scmd with value=${value}`);
       const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       
