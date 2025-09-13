@@ -33,8 +33,8 @@ export function MyGekkoApiTester() {
     }
     
     let fullEndpoint = endpoint;
-    if (itemId && (command || endpoint.includes('status'))) {
-      if (command) {
+    if (itemId && (command && command !== 'none' || endpoint.includes('status'))) {
+      if (command && command !== 'none') {
         fullEndpoint = `var/${itemId}/${command}`;
       } else if (endpoint === 'var/status') {
         fullEndpoint = 'var/status';
@@ -222,7 +222,7 @@ export function MyGekkoApiTester() {
                 <SelectValue placeholder="Select command" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">None</SelectItem>
+                <SelectItem value="none">None</SelectItem>
                 <SelectItem value="scmd">scmd (Set Command)</SelectItem>
               </SelectContent>
             </Select>
