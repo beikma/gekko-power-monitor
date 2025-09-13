@@ -84,38 +84,67 @@ export function SocketAnalyzer() {
   };
 
   const testSocket = async (socketId: string, command: 'on' | 'off') => {
-    try {
-      const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      const params = new URLSearchParams({
-        username: 'mustermann@my-gekko.com',
-        key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        value: command === 'on' ? '1' : '0'
-      });
-      
-      const response = await fetch(`${proxyUrl}?endpoint=var/loads/${socketId}/scmd&${params}`);
-      
-      if (response.ok) {
-        toast({
-          title: `${socketId.toUpperCase()} ${command.toUpperCase()}`,
-          description: `Command sent successfully`,
-        });
+    const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
+    const baseParams = {
+      username: 'mustermann@my-gekko.com',
+      key: 'HjR9j4BrruA8wZiBeiWXnD',
+      gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
+    };
+    
+    const commandValue = command === 'on' ? '1' : '0';
+    
+    // Try multiple endpoint variations like lights do
+    const endpointVariations = [
+      `var/loads/${socketId}/scmd?value=${commandValue}`,
+      `var/loads/${socketId}/set?value=${commandValue}`,
+      `var/loads/${socketId}?scmd=${commandValue}`,
+      `var/${socketId}/scmd?value=${commandValue}`,
+      `var/${socketId}/set?value=${commandValue}`,
+      `var/${socketId}?scmd=${commandValue}`
+    ];
+    
+    let lastError: any;
+    let successMethod = '';
+    
+    for (const endpoint of endpointVariations) {
+      try {
+        const params = new URLSearchParams(baseParams);
+        console.log(`🔄 Trying: ${proxyUrl}?endpoint=${endpoint}`);
         
-        // Refresh data after 2 seconds
-        setTimeout(() => {
-          fetchSocketData();
-        }, 2000);
-      } else {
-        throw new Error(`HTTP ${response.status}`);
+        const response = await fetch(`${proxyUrl}?endpoint=${endpoint}&${params}`);
+        const responseText = await response.text();
+        
+        console.log(`📡 ${endpoint} → ${response.status}: ${responseText}`);
+        
+        if (response.ok) {
+          successMethod = endpoint;
+          toast({
+            title: `${socketId.toUpperCase()} ${command.toUpperCase()}`,
+            description: `Success via ${endpoint}`,
+          });
+          
+          // Refresh data after 2 seconds
+          setTimeout(() => {
+            fetchSocketData();
+          }, 2000);
+          return;
+        } else {
+          lastError = new Error(`${endpoint}: HTTP ${response.status} - ${responseText}`);
+        }
+        
+      } catch (error) {
+        lastError = error;
+        console.log(`❌ ${endpoint} failed:`, error);
       }
-      
-    } catch (error) {
-      toast({
-        title: "Command Failed",
-        description: `Failed to ${command} ${socketId}`,
-        variant: "destructive",
-      });
     }
+    
+    // If all methods failed
+    toast({
+      title: "All Methods Failed",
+      description: `Tried ${endpointVariations.length} endpoints for ${socketId}`,
+      variant: "destructive",
+    });
+    console.error('All socket control methods failed:', lastError);
   };
 
   useEffect(() => {

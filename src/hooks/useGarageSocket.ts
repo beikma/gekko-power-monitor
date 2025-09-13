@@ -110,38 +110,77 @@ export function useGarageSocket() {
     try {
       // Send command to myGEKKO
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      const baseParams = new URLSearchParams({
+      const baseParams = {
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        value: newState ? '1' : '0'
-      });
+        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
+      };
 
       console.log(`🚀 Sending command to ${socket.id}: ${newState ? 'ON' : 'OFF'}`);
-      console.log(`🔗 Full URL: ${proxyUrl}?endpoint=var/loads/${socket.id}/scmd&${baseParams}`);
       
-      const response = await fetch(`${proxyUrl}?endpoint=var/loads/${socket.id}/scmd&${baseParams}`);
-      const responseText = await response.text();
-      const duration = Date.now() - startTime;
+      const commandValue = newState ? '1' : '0';
       
-      console.log(`📡 Command response:`, response.status, responseText);
+      // Try multiple endpoint variations like lights do
+      const endpointVariations = [
+        `var/loads/${socket.id}/scmd?value=${commandValue}`,
+        `var/loads/${socket.id}/set?value=${commandValue}`,
+        `var/loads/${socket.id}?scmd=${commandValue}`,
+        `var/${socket.id}/scmd?value=${commandValue}`,
+        `var/${socket.id}/set?value=${commandValue}`,
+        `var/${socket.id}?scmd=${commandValue}`
+      ];
       
-      // Log response
-      apiLogger?.addLog({
-        type: response.ok ? 'response' : 'error',
-        method: 'POST',
-        url: `gekko-proxy - Toggle ${socket.id}`,
-        status: response.status,
-        data: responseText,
-        duration
-      });
+      let lastError: any;
+      let successMethod = '';
       
-      if (!response.ok) {
-        throw new Error(`Failed to toggle socket: ${response.status} - ${responseText}`);
+      for (const endpoint of endpointVariations) {
+        try {
+          const params = new URLSearchParams(baseParams);
+          console.log(`🔄 Trying: ${proxyUrl}?endpoint=${endpoint}`);
+          
+          const response = await fetch(`${proxyUrl}?endpoint=${endpoint}&${params}`);
+          const responseText = await response.text();
+          const duration = Date.now() - startTime;
+          
+          console.log(`📡 ${endpoint} → ${response.status}: ${responseText}`);
+          
+          // Log response
+          apiLogger?.addLog({
+            type: response.ok ? 'response' : 'error',
+            method: 'POST',
+            url: `gekko-proxy - ${endpoint}`,
+            status: response.status,
+            data: responseText,
+            duration
+          });
+          
+          if (response.ok) {
+            successMethod = endpoint;
+            setSocket(prev => prev ? { ...prev, isOn: newState } : null);
+            console.log(`✅ Socket toggle successful via ${endpoint}`);
+            return;
+          } else {
+            lastError = new Error(`${endpoint}: HTTP ${response.status} - ${responseText}`);
+          }
+          
+        } catch (error) {
+          lastError = error;
+          console.log(`❌ ${endpoint} failed:`, error);
+          
+          apiLogger?.addLog({
+            type: 'error',
+            method: 'POST',
+            url: `gekko-proxy - ${endpoint}`,
+            status: 0,
+            data: error instanceof Error ? error.message : 'Unknown error',
+            duration: Date.now() - startTime
+          });
+        }
       }
-
-      // Update local state
-      setSocket(prev => prev ? { ...prev, isOn: newState } : null);
+      
+      // If all methods failed
+      console.error('All socket toggle methods failed:', lastError);
+      throw lastError;
     } catch (err) {
       const duration = Date.now() - startTime;
       const errorMessage = err instanceof Error ? err.message : 'Failed to toggle socket';
