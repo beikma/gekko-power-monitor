@@ -12,7 +12,8 @@ import {
   CheckCircle,
   Activity,
   ArrowRight,
-  MessageSquare
+  MessageSquare,
+  Home
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
@@ -266,6 +267,12 @@ export function DashboardOverview() {
             <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2" onClick={() => navigate('/climate')}>
               <Thermometer className="h-6 w-6" />
               <span>Climate Control</span>
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            
+            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2" onClick={() => navigate('/garage')}>
+              <Home className="h-6 w-6" />
+              <span>Garage Socket</span>
               <ArrowRight className="h-4 w-4" />
             </Button>
             

@@ -17,6 +17,7 @@ import { BulkDataImport } from "./components/BulkDataImport";
 import SmartHomeDashboard from "./components/SmartHomeDashboard";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
+import GarageSocket from "./pages/GarageSocket";
 import { useGekkoApi } from "./hooks/useGekkoApi";
 
 const queryClient = new QueryClient();
@@ -57,6 +58,12 @@ const App: React.FC = () => {
             <Route path="/security" element={
               <DashboardLayout>
                 <SecurityDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/garage" element={
+              <DashboardLayout>
+                <GarageSocket />
               </DashboardLayout>
             } />
             

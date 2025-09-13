@@ -34,6 +34,7 @@ const mainItems = [
   { title: "Lighting", url: "/lighting", icon: Lightbulb },
   { title: "Climate", url: "/climate", icon: Thermometer },
   { title: "Security", url: "/security", icon: Shield },
+  { title: "Garage Socket", url: "/garage", icon: Home },
 ];
 
 const managementItems = [
