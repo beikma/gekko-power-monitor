@@ -272,6 +272,42 @@ export type Database = {
         }
         Relationships: []
       }
+      teams_configuration: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          notification_types: string[]
+          severity_levels: string[]
+          updated_at: string
+          user_roles: string[]
+          webhook_url: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          notification_types?: string[]
+          severity_levels?: string[]
+          updated_at?: string
+          user_roles?: string[]
+          webhook_url: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          notification_types?: string[]
+          severity_levels?: string[]
+          updated_at?: string
+          user_roles?: string[]
+          webhook_url?: string
+        }
+        Relationships: []
+      }
       weather_data: {
         Row: {
           created_at: string

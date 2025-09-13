@@ -11,7 +11,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Activity,
-  ArrowRight
+  ArrowRight,
+  MessageSquare
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
@@ -268,14 +269,14 @@ export function DashboardOverview() {
               <ArrowRight className="h-4 w-4" />
             </Button>
             
-            <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2" onClick={() => navigate('/import')}>
-              <TrendingUp className="h-6 w-6" />
-              <span>Data Import</span>
-              <ArrowRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+              <Button variant="outline" className="h-auto p-4 flex flex-col items-center gap-2" onClick={() => navigate('/teams')}>
+                <MessageSquare className="h-6 w-6" />
+                <span>Teams Integration</span>
+                <ArrowRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
     </div>
   );
 }

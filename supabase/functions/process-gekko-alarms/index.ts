@@ -122,7 +122,7 @@ serve(async (req) => {
 
     console.log(`Found ${alarms.length} alarms to process`);
 
-    // Store new alarms in database
+    // Store new alarms in database and trigger Teams notifications
     for (const alarm of alarms) {
       // Check if similar alarm already exists (to avoid duplicates)
       const { data: existingAlarm } = await supabaseClient
@@ -135,14 +135,42 @@ serve(async (req) => {
         .single();
 
       if (!existingAlarm) {
-        const { error: insertError } = await supabaseClient
+        const { data: insertedAlarm, error: insertError } = await supabaseClient
           .from('system_alarms')
-          .insert([alarm]);
+          .insert([alarm])
+          .select()
+          .single();
 
         if (insertError) {
           console.error('Error inserting alarm:', insertError);
         } else {
           console.log('Inserted new alarm:', alarm.description);
+          
+          // Trigger Teams notification for new alarm
+          try {
+            const teamsResponse = await fetch(`${Deno.env.get("SUPABASE_URL")}/functions/v1/teams-notification`, {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")}`
+              },
+              body: JSON.stringify({
+                alarm: insertedAlarm,
+                building_info: {
+                  name: "myGEKKO Building",
+                  address: "Building Management System"
+                }
+              })
+            });
+
+            if (teamsResponse.ok) {
+              console.log('Teams notification sent for alarm:', insertedAlarm.id);
+            } else {
+              console.error('Failed to send Teams notification:', await teamsResponse.text());
+            }
+          } catch (teamsError) {
+            console.error('Error sending Teams notification:', teamsError);
+          }
         }
       } else {
         console.log('Similar alarm already exists, skipping:', alarm.description);

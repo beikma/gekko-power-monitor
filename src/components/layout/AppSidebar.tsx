@@ -9,6 +9,7 @@ import {
   Settings,
   Building,
   Activity,
+  MessageSquare,
   Upload
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -38,6 +39,7 @@ const managementItems = [
   { title: "Building Profile", url: "/building", icon: Building },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Data Import", url: "/import", icon: Upload },
+  { title: "Teams Integration", url: "/teams", icon: MessageSquare },
 ];
 
 const systemItems = [

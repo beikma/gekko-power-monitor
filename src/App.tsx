@@ -9,6 +9,7 @@ import EnergyDetailsDashboard from "./components/EnergyDetailsDashboard";
 import LightingControlDashboard from "./components/LightingControlDashboard";
 import ClimateControlDashboard from "./components/ClimateControlDashboard";
 import SecuritySystemDashboard from "./components/SecuritySystemDashboard";
+import TeamsIntegration from "./pages/TeamsIntegration";
 import BuildingProfile from "./components/BuildingProfile";
 import { BulkDataImport } from "./components/BulkDataImport";
 import SmartHomeDashboard from "./components/SmartHomeDashboard";
@@ -70,6 +71,12 @@ const App = () => (
           <Route path="/import" element={
             <DashboardLayout>
               <BulkDataImport />
+            </DashboardLayout>
+          } />
+          
+          <Route path="/teams" element={
+            <DashboardLayout>
+              <TeamsIntegration />
             </DashboardLayout>
           } />
           
