@@ -43,11 +43,21 @@ export function SystemAlarmsMonitor() {
       });
       
       console.log('🚨 Fetching myGEKKO alarms from:', `${proxyUrl}?${params}`);
+      console.log('📋 Full request URL breakdown:');
+      console.log('  - Base URL:', proxyUrl);
+      console.log('  - Endpoint:', `list/alarm/lists/list0/status`);
+      console.log('  - Parameters:', Object.fromEntries(params));
+      
       const response = await fetch(`${proxyUrl}?${params}`);
+      
+      console.log('📡 Response status:', response.status, response.statusText);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
       
       if (!response.ok) {
         console.error(`❌ API Error: ${response.status} ${response.statusText}`);
-        throw new Error(`API Error: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Error response body:', errorText);
+        throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
       
       const responseText = await response.text();
@@ -65,7 +75,27 @@ export function SystemAlarmsMonitor() {
       console.log('📋 Parsed alarm data:', data);
       
       // Transform myGEKKO alarm data to our format
-      const transformedAlarms = transformMyGekkoAlarms(data);
+      let transformedAlarms = transformMyGekkoAlarms(data);
+      if (transformedAlarms.length === 0) {
+        console.log('🔄 No alarms found, trying alternative endpoint...');
+        
+        const altParams = new URLSearchParams({
+          endpoint: 'list/alarm',
+          username: 'mustermann@my-gekko.com',
+          key: 'HjR9j4BrruA8wZiBeiWXnD',
+          gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
+        });
+        
+        const altResponse = await fetch(`${proxyUrl}?${altParams}`);
+        if (altResponse.ok) {
+          const altData = JSON.parse(await altResponse.text());
+          console.log('📋 Alternative alarm data:', altData);
+          const altTransformed = transformMyGekkoAlarms(altData);
+          if (altTransformed.length > 0) {
+            transformedAlarms = altTransformed;
+          }
+        }
+      }
       
       // Apply filter
       let filteredAlarms = transformedAlarms;
