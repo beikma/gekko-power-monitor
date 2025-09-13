@@ -42,6 +42,9 @@ verify_jwt = false
 [functions.gekko-multi-import]
 verify_jwt = false
 
+[functions.assistant-route]
+verify_jwt = false
+
 [functions.prophet-forecast]
 verify_jwt = false
 

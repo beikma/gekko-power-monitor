@@ -7,6 +7,7 @@ import { MCPTestPanel } from '@/components/MCPTestPanel';
 import { OpenMeteoTestCard } from '@/components/OpenMeteoTestCard';
 import { OpenMeteoDirectTest } from '@/components/OpenMeteoDirectTest';
 import { ProphetForecastCard } from '@/components/ProphetForecastCard';
+import { VoiceAssistant } from '@/components/VoiceAssistant';
 
 export default function Admin() {
   return (
@@ -29,6 +30,13 @@ export default function Admin() {
         <OpenMeteoDirectTest />
         
         <ProphetForecastCard />
+        
+        <div className="grid lg:grid-cols-2 gap-6">
+          <div className="p-6 bg-card rounded-lg border">
+            <h3 className="text-lg font-semibold mb-4">Voice Assistant Demo</h3>
+            <VoiceAssistant />
+          </div>
+        </div>
         
         <ForecastCard />
         

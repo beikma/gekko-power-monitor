@@ -12,6 +12,7 @@ import SmartHomeDashboard from '@/components/SmartHomeDashboard';
 import { CO2ImpactTracker } from '@/components/CO2ImpactTracker';
 import { PredictiveMaintenanceCard } from '@/components/PredictiveMaintenanceCard';
 import { EnergyPredictionChart } from '@/components/EnergyPredictionChart';
+import { VoiceToggle } from '@/components/VoiceToggle';
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Zap, Home, Activity, Settings, Grid3X3 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
@@ -257,6 +258,7 @@ const Index = () => {
                 status={connectionStatus} 
                 lastUpdate={lastUpdate} 
               />
+              <VoiceToggle />
               <Button
                 onClick={() => setViewMode(viewMode === 'classic' ? 'smart' : 'classic')}
                 variant="outline"

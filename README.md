@@ -93,3 +93,40 @@ The MCP server includes security hardening:
 - CORS protection
 - Request timeouts (8s)
 - Sanitized error responses
+
+## Voice Assistant
+
+The application includes a zero-cost voice assistant that uses Web Speech APIs for speech recognition and synthesis.
+
+### Supported Intents
+- **Weather**: "What's the weather?" → Gets weather forecast for Bruneck
+- **Health**: "System health" → Checks system status  
+- **Forecast**: "Energy forecast" → Gets AI energy predictions
+- **Lights**: "Turn on lights" → Light control (integration pending)
+
+### Usage
+1. Click the "Voice" button in the navbar for a floating assistant
+2. Or visit the Admin dashboard for the full interface
+3. Click the microphone to start listening (Chrome/Edge) or type your message
+4. The assistant will respond both visually and audibly
+
+### Technical Features
+- **Zero cost**: Uses browser's Web Speech Recognition and Speech Synthesis APIs
+- **Fallback support**: Provides text input when speech recognition unavailable
+- **Rate limited**: 20 requests per minute per IP for security
+- **MCP integration**: Securely proxies to MCP tools via server-side functions
+- **Intent routing**: Simple rule-based intent detection (can be extended with LLM)
+
+### Extending with LLM
+To enhance intent detection with AI:
+1. Replace simple rule matching in `assistant-route` function
+2. Add OpenAI/Claude integration for natural language understanding
+3. Connect to MCP weather tools for dynamic location detection
+4. Add more sophisticated conversation context
+
+### Architecture
+```
+Browser → Voice Assistant → Supabase Edge Function → MCP/Prophet APIs
+```
+
+The assistant never exposes MCP tokens to the browser - all API calls are proxied through secure edge functions.
