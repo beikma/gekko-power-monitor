@@ -1,0 +1,180 @@
+import { WidgetConfig, WidgetCategory } from "@/types/widget";
+import { EnergyOverviewWidget } from "@/components/widgets/EnergyOverviewWidget";
+import { EnergyTrendsWidget } from "@/components/widgets/EnergyTrendsWidget";
+import { ClimateWidget } from "@/components/widgets/ClimateWidget";
+import { SecurityStatusWidget } from "@/components/widgets/SecurityStatusWidget";
+import { SystemAlarmsWidget } from "@/components/widgets/SystemAlarmsWidget";
+import { LightingControlWidget } from "@/components/widgets/LightingControlWidget";
+import { 
+  Zap, 
+  Thermometer, 
+  Shield, 
+  AlertTriangle, 
+  Lightbulb,
+  Activity,
+  Settings
+} from "lucide-react";
+
+// Widget Categories for organization
+export const WIDGET_CATEGORIES: WidgetCategory[] = [
+  {
+    id: 'energy',
+    title: 'Energy Management',
+    description: 'Power consumption, solar generation, and battery status',
+    icon: Zap
+  },
+  {
+    id: 'climate',
+    title: 'Climate Control',
+    description: 'Temperature, humidity, and air quality monitoring',
+    icon: Thermometer
+  },
+  {
+    id: 'lighting',
+    title: 'Lighting Control',
+    description: 'Smart lighting control and automation',
+    icon: Lightbulb
+  },
+  {
+    id: 'security',
+    title: 'Security & Safety',
+    description: 'Security status, alarms, and monitoring',
+    icon: Shield
+  },
+  {
+    id: 'monitoring',
+    title: 'System Monitoring',
+    description: 'System health, alarms, and diagnostics',
+    icon: Activity
+  },
+  {
+    id: 'control',
+    title: 'Device Control',
+    description: 'Direct control of connected devices',
+    icon: Settings
+  }
+];
+
+// Available Widget Registry
+export const AVAILABLE_WIDGETS: Omit<WidgetConfig, 'enabled' | 'position' | 'order'>[] = [
+  {
+    id: 'energy-overview',
+    title: 'Energy Overview',
+    description: 'Real-time power consumption and generation overview',
+    category: 'energy',
+    size: 'medium',
+    component: EnergyOverviewWidget,
+    requiredData: ['power', 'energy']
+  },
+  {
+    id: 'energy-trends',
+    title: 'Energy Trends',
+    description: '24-hour energy consumption and generation trends',
+    category: 'energy',
+    size: 'large',
+    component: EnergyTrendsWidget,
+    requiredData: ['power', 'energy']
+  },
+  {
+    id: 'climate-status',
+    title: 'Climate Status',
+    description: 'Indoor temperature, humidity, and air quality',
+    category: 'climate',
+    size: 'small',
+    component: ClimateWidget,
+    requiredData: ['temperature', 'humidity']
+  },
+  {
+    id: 'security-status',
+    title: 'Security Status',
+    description: 'Security system status and door locks',
+    category: 'security',
+    size: 'small',
+    component: SecurityStatusWidget,
+    requiredData: ['security']
+  },
+  {
+    id: 'system-alarms',
+    title: 'System Alarms',
+    description: 'Active system alarms and notifications',
+    category: 'monitoring',
+    size: 'medium',
+    component: SystemAlarmsWidget,
+    requiredData: ['alarms']
+  },
+  {
+    id: 'lighting-control',
+    title: 'Lighting Control',
+    description: 'Control and monitor lighting systems',
+    category: 'lighting',
+    size: 'medium',
+    component: LightingControlWidget,
+    requiredData: ['lighting']
+  }
+];
+
+// Default Dashboard Layout for new users
+export const DEFAULT_DASHBOARD_LAYOUT: WidgetConfig[] = [
+  {
+    ...AVAILABLE_WIDGETS[0], // Energy Overview
+    enabled: true,
+    position: { x: 0, y: 0 },
+    order: 1
+  },
+  {
+    ...AVAILABLE_WIDGETS[1], // Climate Status
+    enabled: true,
+    position: { x: 1, y: 0 },
+    order: 2
+  },
+  {
+    ...AVAILABLE_WIDGETS[2], // Security Status
+    enabled: true,
+    position: { x: 2, y: 0 },
+    order: 3
+  },
+  {
+    ...AVAILABLE_WIDGETS[3], // System Alarms
+    enabled: true,
+    position: { x: 0, y: 1 },
+    order: 4
+  },
+  {
+    ...AVAILABLE_WIDGETS[4], // Lighting Control
+    enabled: true,
+    position: { x: 1, y: 1 },
+    order: 5
+  }
+];
+
+// Helper function to check if widget should be visible based on available data
+export function shouldShowWidget(widget: WidgetConfig, availableData: Record<string, any>): boolean {
+  if (!widget.requiredData || widget.requiredData.length === 0) {
+    return true; // No requirements, always show
+  }
+
+  // Check if any of the required data keys exist and have meaningful values
+  return widget.requiredData.some(dataKey => {
+    const value = availableData[dataKey];
+    if (value === null || value === undefined) return false;
+    if (typeof value === 'object' && Object.keys(value).length === 0) return false;
+    if (Array.isArray(value) && value.length === 0) return false;
+    return true;
+  });
+}
+
+// Helper to get grid class based on widget size
+export function getWidgetGridClass(size: WidgetConfig['size']): string {
+  switch (size) {
+    case 'small':
+      return 'col-span-1 row-span-1';
+    case 'medium':
+      return 'col-span-2 row-span-1';
+    case 'large':
+      return 'col-span-2 row-span-2';
+    case 'full':
+      return 'col-span-full row-span-1';
+    default:
+      return 'col-span-1 row-span-1';
+  }
+}
