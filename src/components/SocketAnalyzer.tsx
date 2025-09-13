@@ -95,12 +95,18 @@ export function SocketAnalyzer() {
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
       });
 
+      console.log(`🔍 Getting device info for ${socketId}...`);
       // Get device info to find scmd index
       const infoResponse = await fetch(`${proxyUrl}?endpoint=var&${baseParams}`);
       const infoData = await infoResponse.json();
       
+      console.log(`📊 Device info for ${socketId}:`, infoData.lights?.[socketId]);
+      
       const deviceIndex = infoData.lights?.[socketId]?.scmd?.index;
+      console.log(`🔢 Found device index: ${deviceIndex}`);
+      
       if (!deviceIndex) {
+        console.error(`❌ No command index found for ${socketId}`);
         throw new Error(`Could not find command index for ${socketId}`);
       }
 
@@ -134,12 +140,12 @@ export function SocketAnalyzer() {
         throw new Error(`HTTP ${response.status} - ${responseText}`);
       }
     } catch (error) {
+      console.error(`❌ Socket command failed for ${socketId}:`, error);
       toast({
         title: "Command Failed",
         description: `Failed to ${command} ${socketId}: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: "destructive",
       });
-      console.error(`❌ Socket command failed:`, error);
     }
   };
 
