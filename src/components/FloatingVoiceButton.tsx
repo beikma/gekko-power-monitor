@@ -199,36 +199,53 @@ export function FloatingVoiceButton({ className = "fixed bottom-6 right-6 z-50" 
       }
 
       if (data?.audioContent) {
-        // Decode base64 audio and play
-        const audioData = atob(data.audioContent);
-        const arrayBuffer = new ArrayBuffer(audioData.length);
-        const view = new Uint8Array(arrayBuffer);
+        // Decode base64 audio and play  
+        console.log('🎵 Decoding audio data...');
+        const binaryString = atob(data.audioContent);
+        const bytes = new Uint8Array(binaryString.length);
         
-        for (let i = 0; i < audioData.length; i++) {
-          view[i] = audioData.charCodeAt(i);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
         }
 
         // Create audio blob and play
-        const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+        const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
         
+        console.log('🎵 Setting up audio playback...');
         audio.volume = 1.0;
+        audio.preload = 'auto';
+        
+        audio.onloadstart = () => console.log('🎵 Audio loading started');
+        audio.oncanplay = () => console.log('🎵 Audio can play');
+        audio.onplay = () => console.log('🎵 Audio playback started');
         audio.onended = () => {
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
-          console.log('🎵 OpenAI TTS playback completed');
+          console.log('🎵 Audio playback completed');
         };
         audio.onerror = (error) => {
-          console.error('Audio playback error:', error);
+          console.error('🚫 Audio playback error:', error);
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
-          // Fallback to web speech
+          toast({
+            title: 'Audio Playback Failed',
+            description: 'Using fallback speech synthesis',
+            variant: 'destructive'
+          });
           fallbackToWebSpeech(text);
         };
 
-        await audio.play();
-        console.log('🎵 Playing OpenAI TTS audio');
+        try {
+          await audio.play();
+          console.log('🎵 Audio.play() called successfully');
+        } catch (playError) {
+          console.error('🚫 Audio play failed:', playError);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          fallbackToWebSpeech(text);
+        }
         
       } else {
         throw new Error('No audio content received');

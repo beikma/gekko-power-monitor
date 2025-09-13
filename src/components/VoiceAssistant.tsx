@@ -148,30 +148,43 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
       }
 
       if (data?.audioContent) {
-        const audioData = atob(data.audioContent);
-        const arrayBuffer = new ArrayBuffer(audioData.length);
-        const view = new Uint8Array(arrayBuffer);
+        console.log('🎵 Decoding OpenAI audio...');
+        const binaryString = atob(data.audioContent);
+        const bytes = new Uint8Array(binaryString.length);
         
-        for (let i = 0; i < audioData.length; i++) {
-          view[i] = audioData.charCodeAt(i);
+        for (let i = 0; i < binaryString.length; i++) {
+          bytes[i] = binaryString.charCodeAt(i);
         }
 
-        const audioBlob = new Blob([arrayBuffer], { type: 'audio/mpeg' });
+        const audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
         const audioUrl = URL.createObjectURL(audioBlob);
         const audio = new Audio(audioUrl);
         
         audio.volume = 1.0;
+        audio.preload = 'auto';
+        
+        audio.onplay = () => console.log('🎵 Playing OpenAI audio');
         audio.onended = () => {
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
+          console.log('🎵 Audio ended');
         };
-        audio.onerror = () => {
+        audio.onerror = (error) => {
+          console.error('🚫 Audio error:', error);
           setIsSpeaking(false);
           URL.revokeObjectURL(audioUrl);
           fallbackToWebSpeech(text);
         };
 
-        await audio.play();
+        try {
+          await audio.play();
+          console.log('🎵 Audio playback initiated');
+        } catch (playError) {
+          console.error('🚫 Play failed:', playError);
+          setIsSpeaking(false);
+          URL.revokeObjectURL(audioUrl);
+          fallbackToWebSpeech(text);
+        }
       } else {
         throw new Error('No audio content');
       }

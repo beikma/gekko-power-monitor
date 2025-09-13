@@ -52,10 +52,15 @@ serve(async (req) => {
     const arrayBuffer = await response.arrayBuffer();
     console.log(`Generated audio: ${arrayBuffer.byteLength} bytes`);
 
-    // Convert to base64 for transport
-    const base64Audio = btoa(
-      String.fromCharCode(...new Uint8Array(arrayBuffer))
-    );
+    // Convert to base64 for transport (chunk processing to avoid stack overflow)
+    const uint8Array = new Uint8Array(arrayBuffer);
+    let base64Audio = '';
+    const chunkSize = 8192; // Process in 8KB chunks
+    
+    for (let i = 0; i < uint8Array.length; i += chunkSize) {
+      const chunk = uint8Array.subarray(i, Math.min(i + chunkSize, uint8Array.length));
+      base64Audio += btoa(String.fromCharCode.apply(null, Array.from(chunk)));
+    }
 
     return new Response(
       JSON.stringify({ 
