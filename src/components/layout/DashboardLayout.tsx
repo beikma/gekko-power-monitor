@@ -5,6 +5,7 @@ import { useLocation } from "react-router-dom";
 import { Bell, Search, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { FloatingVoiceButton } from "@/components/FloatingVoiceButton";
 
 interface DashboardLayoutProps {
   children: React.ReactNode;
@@ -117,6 +118,9 @@ export function DashboardLayout({ children, title, breadcrumbs }: DashboardLayou
             </div>
           </main>
         </div>
+        
+        {/* Floating Voice Button */}
+        <FloatingVoiceButton />
       </div>
     </SidebarProvider>
   );

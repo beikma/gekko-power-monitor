@@ -230,6 +230,84 @@ export type Database = {
         }
         Relationships: []
       }
+      point_history: {
+        Row: {
+          id: string
+          metadata: Json | null
+          point_id: string
+          source: string | null
+          timestamp: string
+          value: string
+        }
+        Insert: {
+          id?: string
+          metadata?: Json | null
+          point_id: string
+          source?: string | null
+          timestamp?: string
+          value: string
+        }
+        Update: {
+          id?: string
+          metadata?: Json | null
+          point_id?: string
+          source?: string | null
+          timestamp?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      points: {
+        Row: {
+          created_at: string
+          current_value: string | null
+          id: string
+          is_controllable: boolean
+          last_updated: string | null
+          max_value: number | null
+          metadata: Json | null
+          min_value: number | null
+          name: string
+          point_id: string
+          room: string | null
+          type: string
+          unit: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_value?: string | null
+          id?: string
+          is_controllable?: boolean
+          last_updated?: string | null
+          max_value?: number | null
+          metadata?: Json | null
+          min_value?: number | null
+          name: string
+          point_id: string
+          room?: string | null
+          type: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_value?: string | null
+          id?: string
+          is_controllable?: boolean
+          last_updated?: string | null
+          max_value?: number | null
+          metadata?: Json | null
+          min_value?: number | null
+          name?: string
+          point_id?: string
+          room?: string | null
+          type?: string
+          unit?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       system_alarms: {
         Row: {
           alarm_type: string
@@ -305,6 +383,48 @@ export type Database = {
           updated_at?: string
           user_roles?: string[]
           webhook_url?: string
+        }
+        Relationships: []
+      }
+      voice_log: {
+        Row: {
+          created_at: string
+          error_message: string | null
+          id: string
+          intent: string
+          ip_address: unknown | null
+          new_value: string | null
+          old_value: string | null
+          point_id: string | null
+          response_time_ms: number | null
+          success: boolean
+          user_input: string
+        }
+        Insert: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          intent: string
+          ip_address?: unknown | null
+          new_value?: string | null
+          old_value?: string | null
+          point_id?: string | null
+          response_time_ms?: number | null
+          success?: boolean
+          user_input: string
+        }
+        Update: {
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          intent?: string
+          ip_address?: unknown | null
+          new_value?: string | null
+          old_value?: string | null
+          point_id?: string | null
+          response_time_ms?: number | null
+          success?: boolean
+          user_input?: string
         }
         Relationships: []
       }

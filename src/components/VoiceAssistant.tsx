@@ -4,8 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { supabase } from '@/integrations/supabase/client';
-import { Mic, MicOff, Volume2, VolumeX, MessageSquare, Activity, X } from 'lucide-react';
+import { Mic, MicOff, Volume2, VolumeX, MessageSquare, Activity, X, HelpCircle, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 
 interface Interaction {
@@ -14,8 +15,10 @@ interface Interaction {
   userText: string;
   assistantText: string;
   intent?: string;
-  tool?: string;
-  duration?: number;
+  confidence?: number;
+  success?: boolean;
+  responseTime?: number;
+  data?: any;
 }
 
 interface VoiceAssistantProps {
@@ -32,6 +35,9 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
   const [speechSupported, setSpeechSupported] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [manualInput, setManualInput] = useState('');
+  const [currentIntent, setCurrentIntent] = useState<string | null>(null);
+  const [currentConfidence, setCurrentConfidence] = useState<number | null>(null);
+  const [mcpStatus, setMcpStatus] = useState<'unknown' | 'connected' | 'error'>('unknown');
   
   const recognitionRef = useRef<any>(null);
   const { toast } = useToast();
@@ -143,19 +149,16 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
 
   const processUserInput = async (userText: string) => {
     setIsProcessing(true);
-    const startTime = Date.now();
+    setCurrentIntent(null);
+    setCurrentConfidence(null);
 
     try {
-      // Simple intent detection
-      const intent = detectIntent(userText);
-      
-      console.log(`Detected intent: ${intent} from "${userText}"`);
-
-      const { data, error } = await supabase.functions.invoke('assistant-route', {
+      // Call the new voice-assistant endpoint
+      const { data, error } = await supabase.functions.invoke('voice-assistant', {
         body: {
-          intent,
           text: userText,
-          params: getIntentParams(intent)
+          userId: 'demo-user', // In real app, get from auth
+          clientIp: 'unknown'
         }
       });
 
@@ -163,8 +166,12 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
         throw new Error(error.message);
       }
 
-      const duration = Date.now() - startTime;
-      const assistantText = data.speechText || data.text || 'I received your request but have no response.';
+      const assistantText = data.speechText || data.message || 'I received your request but have no response.';
+      
+      // Update current intent/confidence
+      setCurrentIntent(data.intent);
+      setCurrentConfidence(data.confidence);
+      setMcpStatus(data.success ? 'connected' : 'error');
       
       // Create interaction record
       const interaction: Interaction = {
@@ -173,27 +180,31 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
         userText,
         assistantText,
         intent: data.intent,
-        tool: data.tool,
-        duration
+        confidence: data.confidence,
+        success: data.success,
+        responseTime: data.responseTime,
+        data: data.data
       };
 
       // Update state
-      setInteractions(prev => [interaction, ...prev.slice(0, 4)]); // Keep last 5
+      setInteractions(prev => [interaction, ...prev.slice(0, 9)]); // Keep last 10
       setResponse(assistantText);
       
       // Speak the response
       speak(assistantText);
 
       toast({
-        title: 'Assistant Response',
-        description: `Processed "${intent}" intent in ${duration}ms`,
+        title: data.success ? 'Command Executed' : 'Command Failed',
+        description: `${data.intent} (${Math.round((data.confidence || 0) * 100)}% confidence) - ${data.responseTime}ms`,
+        variant: data.success ? 'default' : 'destructive'
       });
 
     } catch (error) {
-      console.error('Assistant error:', error);
+      console.error('Voice Assistant error:', error);
       const errorText = 'Sorry, I encountered an error processing your request.';
       setResponse(errorText);
       speak(errorText);
+      setMcpStatus('error');
       
       toast({
         title: 'Assistant Error',
@@ -205,35 +216,21 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
     }
   };
 
-  const detectIntent = (text: string): string => {
-    const lowerText = text.toLowerCase();
+  // Test MCP connection on mount
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        const { data } = await supabase.functions.invoke('voice-assistant', {
+          body: { text: 'system health' }
+        });
+        setMcpStatus(data.success ? 'connected' : 'error');
+      } catch {
+        setMcpStatus('error');
+      }
+    };
     
-    if (lowerText.includes('weather') || lowerText.includes('temperature') || lowerText.includes('forecast')) {
-      return 'weather';
-    }
-    if (lowerText.includes('health') || lowerText.includes('status') || lowerText.includes('system')) {
-      return 'health';
-    }
-    if (lowerText.includes('energy') || lowerText.includes('consumption') || lowerText.includes('prediction')) {
-      return 'forecast';
-    }
-    if (lowerText.includes('light') || lowerText.includes('lamp') || lowerText.includes('brightness')) {
-      return 'lights';
-    }
-    
-    return 'unknown';
-  };
-
-  const getIntentParams = (intent: string) => {
-    switch (intent) {
-      case 'weather':
-        return { lat: 46.7944, lon: 11.9464, hours: 24 }; // Bruneck default
-      case 'forecast':
-        return { hours: 48 };
-      default:
-        return {};
-    }
-  };
+    testConnection();
+  }, []);
 
   const handleManualSubmit = () => {
     if (manualInput.trim()) {
@@ -322,9 +319,22 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
           <Badge variant={speechSupported ? "default" : "secondary"}>
             {speechSupported ? "Speech Ready" : "Text Only"}
           </Badge>
+          <Badge variant={mcpStatus === 'connected' ? 'default' : mcpStatus === 'error' ? 'destructive' : 'secondary'}>
+            <div className="flex items-center gap-1">
+              {mcpStatus === 'connected' && <CheckCircle className="h-3 w-3" />}
+              {mcpStatus === 'error' && <AlertTriangle className="h-3 w-3" />}
+              {mcpStatus === 'unknown' && <Clock className="h-3 w-3" />}
+              MCP {mcpStatus === 'connected' ? 'Ready' : mcpStatus === 'error' ? 'Error' : 'Testing'}
+            </div>
+          </Badge>
           {isListening && <Badge variant="destructive">Listening...</Badge>}
           {isProcessing && <Badge variant="outline">Processing...</Badge>}
           {isSpeaking && <Badge variant="outline">Speaking...</Badge>}
+          {currentIntent && (
+            <Badge variant="outline">
+              {currentIntent} ({Math.round((currentConfidence || 0) * 100)}%)
+            </Badge>
+          )}
         </div>
 
         {/* Live Transcript */}
@@ -337,8 +347,18 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
 
         {/* Response Area */}
         {response && (
-          <div className="p-3 bg-primary/5 rounded-lg border">
-            <div className="text-xs text-muted-foreground mb-1">Assistant:</div>
+          <div className={`p-3 rounded-lg border ${interactions[0]?.success ? 'bg-emerald-50 border-emerald-200' : 'bg-red-50 border-red-200'}`}>
+            <div className="flex items-center gap-2 text-xs text-muted-foreground mb-1">
+              <span>Assistant:</span>
+              {interactions[0]?.success ? (
+                <CheckCircle className="h-3 w-3 text-emerald-600" />
+              ) : (
+                <AlertTriangle className="h-3 w-3 text-red-600" />
+              )}
+              {interactions[0]?.responseTime && (
+                <span>({interactions[0].responseTime}ms)</span>
+              )}
+            </div>
             <div className="text-sm">{response}</div>
           </div>
         )}
@@ -350,23 +370,33 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
             <ScrollArea className="h-32">
               <div className="space-y-2">
                 {interactions.map((interaction) => (
-                  <div key={interaction.id} className="p-2 bg-muted/30 rounded text-xs">
+                  <div key={interaction.id} className={`p-2 rounded text-xs ${interaction.success ? 'bg-emerald-50' : 'bg-red-50'}`}>
                     <div className="flex items-center gap-2 mb-1">
                       <Badge variant="outline" className="text-xs">
                         {interaction.intent}
                       </Badge>
-                      {interaction.tool && (
+                      {interaction.confidence && (
                         <Badge variant="secondary" className="text-xs">
-                          {interaction.tool}
+                          {Math.round(interaction.confidence * 100)}%
                         </Badge>
                       )}
+                      {interaction.success ? (
+                        <CheckCircle className="h-3 w-3 text-emerald-600" />
+                      ) : (
+                        <AlertTriangle className="h-3 w-3 text-red-600" />
+                      )}
                       <span className="text-muted-foreground">{interaction.timestamp}</span>
-                      {interaction.duration && (
-                        <span className="text-muted-foreground">({interaction.duration}ms)</span>
+                      {interaction.responseTime && (
+                        <span className="text-muted-foreground">({interaction.responseTime}ms)</span>
                       )}
                     </div>
                     <div className="text-muted-foreground">You: {interaction.userText}</div>
                     <div>Assistant: {interaction.assistantText}</div>
+                    {interaction.data && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Data: {JSON.stringify(interaction.data, null, 2)}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -374,12 +404,60 @@ export function VoiceAssistant({ onClose, isFloating = false }: VoiceAssistantPr
           </div>
         )}
 
-        {/* Getting Started */}
+        {/* Help and Getting Started */}
+        <div className="flex items-center gap-2">
+          <Dialog>
+            <DialogTrigger asChild>
+              <Button variant="outline" size="sm" className="flex-1">
+                <HelpCircle className="h-4 w-4 mr-2" />
+                Sample Commands
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Voice Commands</DialogTitle>
+                <DialogDescription>
+                  Here are some example commands you can try:
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Control Commands</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• "Set office temperature to 22.5"</li>
+                    <li>• "Set lobby light to 80 percent"</li>
+                    <li>• "Turn on the boiler"</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm mb-2">Query Commands</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• "What is the office temperature"</li>
+                    <li>• "Show me the lobby light status"</li>
+                    <li>• "List all controllable points"</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-medium text-sm mb-2">System Commands</h4>
+                  <ul className="text-sm text-muted-foreground space-y-1">
+                    <li>• "System health check"</li>
+                    <li>• "Show energy history today"</li>
+                    <li>• "What happened yesterday"</li>
+                  </ul>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+        </div>
+
         {interactions.length === 0 && !response && (
           <div className="text-center py-4 text-muted-foreground">
-            <Activity className="h-8 w-8 mx-auto mb-2 opacity-50" />
+            <MessageSquare className="h-8 w-8 mx-auto mb-2 opacity-50" />
             <div className="text-sm">
-              Try saying: "What's the weather?", "System health", or "Energy forecast"
+              Ready for your voice commands!
+            </div>
+            <div className="text-xs mt-1">
+              Click "Sample Commands" above to see what you can say
             </div>
           </div>
         )}
