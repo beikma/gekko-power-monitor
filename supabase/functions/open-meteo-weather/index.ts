@@ -68,9 +68,10 @@ serve(async (req) => {
     const openMeteoUrl = new URL('https://api.open-meteo.com/v1/forecast');
     openMeteoUrl.searchParams.set('latitude', lat.toString());
     openMeteoUrl.searchParams.set('longitude', lon.toString());
-    openMeteoUrl.searchParams.set('hourly', 'temperature_2m,solar_radiation');
-    openMeteoUrl.searchParams.set('forecast_days', Math.ceil(hours / 24).toString());
+    openMeteoUrl.searchParams.set('hourly', 'temperature_2m,global_radiation');
+    openMeteoUrl.searchParams.set('forecast_days', Math.min(7, Math.ceil(hours / 24)).toString());
     openMeteoUrl.searchParams.set('timezone', 'auto');
+    openMeteoUrl.searchParams.set('models', 'best_match');
 
     const response = await fetch(openMeteoUrl.toString(), {
       headers: {
@@ -106,7 +107,7 @@ serve(async (req) => {
     // Normalize data and limit to requested hours
     const timestamps = data.hourly.time.slice(0, hours);
     const temperature = data.hourly.temperature_2m ? data.hourly.temperature_2m.slice(0, hours) : [];
-    const solarRadiation = data.hourly.solar_radiation ? data.hourly.solar_radiation.slice(0, hours) : [];
+    const solarRadiation = data.hourly.global_radiation ? data.hourly.global_radiation.slice(0, hours) : [];
 
     // Fill missing values with null
     while (temperature.length < timestamps.length) {
