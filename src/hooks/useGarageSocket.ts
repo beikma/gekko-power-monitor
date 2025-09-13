@@ -108,38 +108,31 @@ export function useGarageSocket() {
     });
     
     try {
-      // Send command to myGEKKO
-      const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      const baseParams = {
+      // Call MyGekko API directly
+      const value = newState ? '2' : '0'; // 2 = OnPermanent, 0 = Off
+      
+      const params = new URLSearchParams({
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
-      };
-
-      console.log(`🚀 Sending command to ${socket.id}: ${newState ? 'ON' : 'OFF'}`);
-      
-      const commandValue = newState ? '1' : '0';
-      
-      // Use the correct working endpoint from debug results
-      const endpoint = `var/loads/${socket.id}/scmd`;
-      const params = new URLSearchParams({
-        ...baseParams,
-        value: newState ? '2' : '0'  // 2=OnPermanent, 0=Off for sockets (not 1/0 like lights)
+        gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
+        value: value
       });
+
+      const gekkoUrl = `https://live.my-gekko.com/api/v1/var/loads/${socket.id}/scmd?${params}`;
       
-      console.log(`🔄 Using correct endpoint: ${proxyUrl}?endpoint=${endpoint}&${params}`);
+      console.log(`🚀 Calling MyGekko API directly: ${gekkoUrl}`);
       
-      const response = await fetch(`${proxyUrl}?endpoint=${endpoint}&${params}`);
+      const response = await fetch(gekkoUrl);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
       
-      console.log(`📡 ${endpoint} → ${response.status}: ${responseText}`);
+      console.log(`📡 API Response → ${response.status}: ${responseText}`);
       
       // Log response
       apiLogger?.addLog({
         type: response.ok ? 'response' : 'error',
         method: 'POST',
-        url: `gekko-proxy - ${endpoint}`,
+        url: `MyGekko API - var/loads/${socket.id}/scmd`,
         status: response.status,
         data: responseText,
         duration
@@ -147,10 +140,10 @@ export function useGarageSocket() {
       
       if (response.ok) {
         setSocket(prev => prev ? { ...prev, isOn: newState } : null);
-        console.log(`✅ Socket toggle successful via ${endpoint}`);
+        console.log(`✅ Socket toggle successful`);
         return;
       } else {
-        throw new Error(`${endpoint}: HTTP ${response.status} - ${responseText}`);
+        throw new Error(`HTTP ${response.status} - ${responseText}`);
       }
     } catch (err) {
       const duration = Date.now() - startTime;

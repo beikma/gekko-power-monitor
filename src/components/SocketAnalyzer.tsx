@@ -85,26 +85,24 @@ export function SocketAnalyzer() {
 
   const testSocket = async (socketId: string, command: 'on' | 'off') => {
     try {
-      const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      const baseParams = {
+      const value = command === 'on' ? '2' : '0'; // 2 = OnPermanent, 0 = Off
+      
+      // Call MyGekko API directly
+      const params = new URLSearchParams({
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
-      };
-      
-      // Use the correct working endpoint: var/loads/socketId/scmd with proper socket values
-      const endpoint = `var/loads/${socketId}/scmd`;
-      const params = new URLSearchParams({
-        ...baseParams,
-        value: command === 'on' ? '2' : '0'  // 2=OnPermanent, 0=Off for sockets
+        gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
+        value: value
       });
+
+      const gekkoUrl = `https://live.my-gekko.com/api/v1/var/loads/${socketId}/scmd?${params}`;
       
-      console.log(`🔄 Using working endpoint: ${proxyUrl}?endpoint=${endpoint}&${params}`);
+      console.log(`🔄 Calling MyGekko API directly: ${gekkoUrl}`);
       
-      const response = await fetch(`${proxyUrl}?endpoint=${endpoint}&${params}`);
+      const response = await fetch(gekkoUrl);
       const responseText = await response.text();
       
-      console.log(`📡 ${endpoint} → ${response.status}: ${responseText}`);
+      console.log(`📡 API Response → ${response.status}: ${responseText}`);
       
       if (response.ok) {
         toast({
@@ -117,7 +115,7 @@ export function SocketAnalyzer() {
           fetchSocketData();
         }, 2000);
       } else {
-        throw new Error(`${endpoint}: HTTP ${response.status} - ${responseText}`);
+        throw new Error(`HTTP ${response.status} - ${responseText}`);
       }
     } catch (error) {
       toast({
