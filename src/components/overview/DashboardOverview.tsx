@@ -200,32 +200,32 @@ export function DashboardOverview() {
             <div className="space-y-3">
               {alarms.map((alarm) => (
                 <div key={alarm.id} className="flex items-center gap-3 p-3 border rounded-lg">
-                  <div className="flex-shrink-0">
-                    {alarm.status === 'active' ? (
-                      <AlertTriangle className="h-4 w-4 text-red-500" />
-                    ) : (
-                      <CheckCircle className="h-4 w-4 text-green-500" />
-                    )}
-                  </div>
+                   <div className="flex-shrink-0">
+                     {!alarm.resolved ? (
+                       <AlertTriangle className="h-4 w-4 text-red-500" />
+                     ) : (
+                       <CheckCircle className="h-4 w-4 text-green-500" />
+                     )}
+                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate">{alarm.description}</p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge 
-                        variant={
-                          alarm.severity === 'critical' || alarm.severity === 'high' 
-                            ? 'destructive' 
-                            : alarm.severity === 'medium' 
-                            ? 'default' 
-                            : 'secondary'
-                        } 
-                        className="text-xs"
-                      >
-                        {alarm.severity}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        {new Date(alarm.created_at).toLocaleTimeString()}
-                      </span>
-                    </div>
+                     <div className="flex items-center gap-2 mt-1">
+                       <Badge 
+                         variant={
+                           alarm.priority === 'critical' || alarm.priority === 'high' || alarm.priority === '1'
+                             ? 'destructive' 
+                             : alarm.priority === 'medium' || alarm.priority === '2'
+                             ? 'default' 
+                             : 'secondary'
+                         } 
+                         className="text-xs"
+                       >
+                         {alarm.priority}
+                       </Badge>
+                       <span className="text-xs text-muted-foreground">
+                         {new Date(alarm.timestamp).toLocaleTimeString()}
+                       </span>
+                     </div>
                   </div>
                 </div>
               ))}

@@ -6,19 +6,19 @@ import { AlertTriangle, CheckCircle, Clock, Wifi, WifiOff, Settings, Thermometer
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
-interface SystemAlarm {
+interface MyGekkoAlarm {
   id: string;
-  description: string;
-  alarm_type: string;
-  start_time: string;
-  end_time?: string;
+  timestamp: string;
   status: string;
-  severity: string;
-  created_at: string;
+  description: string;
+  category: string;
+  priority: string;
+  acknowledged: boolean;
+  resolved: boolean;
 }
 
 export function SystemAlarmsMonitor() {
-  const [alarms, setAlarms] = useState<SystemAlarm[]>([]);
+  const [alarms, setAlarms] = useState<MyGekkoAlarm[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'active' | 'resolved'>('active');
   const { toast } = useToast();
@@ -30,30 +30,47 @@ export function SystemAlarmsMonitor() {
   const fetchAlarms = async () => {
     setIsLoading(true);
     try {
-      let query = supabase
-        .from('system_alarms')
-        .select('*')
-        .order('start_time', { ascending: false })
-        .limit(50);
-
+      const currentYear = new Date().getFullYear();
+      const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
+      const params = new URLSearchParams({
+        endpoint: `list/alarm/lists/list0/status`,
+        startrow: '0',
+        rowcount: '100',
+        year: currentYear.toString(),
+        username: 'mustermann@my-gekko.com',
+        key: 'HjR9j4BrruA8wZiBeiWXnD',
+        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
+      });
+      
+      console.log('🚨 Fetching myGEKKO alarms from:', `${proxyUrl}?${params}`);
+      const response = await fetch(`${proxyUrl}?${params}`);
+      
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log('📋 Raw alarm data:', data);
+      
+      // Transform myGEKKO alarm data to our format
+      const transformedAlarms = transformMyGekkoAlarms(data);
+      
+      // Apply filter
+      let filteredAlarms = transformedAlarms;
       if (filter === 'active') {
-        query = query.eq('status', 'active');
+        filteredAlarms = transformedAlarms.filter(alarm => !alarm.resolved);
       } else if (filter === 'resolved') {
-        query = query.eq('status', 'resolved');
+        filteredAlarms = transformedAlarms.filter(alarm => alarm.resolved);
       }
-
-      const { data, error } = await query;
-
-      if (error) {
-        throw error;
-      }
-
-      setAlarms(data || []);
+      
+      setAlarms(filteredAlarms);
+      console.log(`✅ Loaded ${filteredAlarms.length} alarms (filter: ${filter})`);
+      
     } catch (error) {
-      console.error('Error fetching alarms:', error);
+      console.error('❌ Error fetching myGEKKO alarms:', error);
       toast({
         title: "Error",
-        description: "Failed to fetch system alarms",
+        description: "Failed to fetch myGEKKO system alarms",
         variant: "destructive",
       });
     } finally {
@@ -61,44 +78,69 @@ export function SystemAlarmsMonitor() {
     }
   };
 
-  const getAlarmIcon = (alarmType: string) => {
-    switch (alarmType) {
+  // Transform myGEKKO alarm data to our component format
+  const transformMyGekkoAlarms = (data: any): MyGekkoAlarm[] => {
+    if (!data || !data.alarms) {
+      console.log('⚠️ No alarm data found in response');
+      return [];
+    }
+
+    return data.alarms.map((alarm: any, index: number) => ({
+      id: alarm.id || `alarm_${index}`,
+      timestamp: alarm.timestamp || alarm.date || new Date().toISOString(),
+      status: alarm.status || (alarm.acknowledged ? 'acknowledged' : 'active'),
+      description: alarm.text || alarm.description || 'System alarm',
+      category: alarm.category || alarm.type || 'system',
+      priority: alarm.priority || alarm.severity || 'medium',
+      acknowledged: alarm.acknowledged || false,
+      resolved: alarm.resolved || alarm.status === 'resolved'
+    }));
+  };
+
+  const getAlarmIcon = (category: string) => {
+    switch (category.toLowerCase()) {
       case 'connection':
+      case 'network':
         return WifiOff;
       case 'hardware':
+      case 'device':
         return Settings;
       case 'heating':
+      case 'hvac':
+      case 'temperature':
         return Thermometer;
       case 'weather':
+      case 'meteo':
         return Cloud;
       default:
         return AlertTriangle;
     }
   };
 
-  const getAlarmColor = (severity: string) => {
-    switch (severity) {
+  const getAlarmColor = (priority: string) => {
+    switch (priority.toLowerCase()) {
       case 'critical':
-        return 'destructive';
       case 'high':
+      case '1':
         return 'destructive';
       case 'medium':
+      case '2':
         return 'default';
       case 'low':
+      case '3':
         return 'secondary';
       default:
         return 'outline';
     }
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <AlertTriangle className="h-4 w-4 text-red-500" />;
-      case 'resolved':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      default:
-        return <Clock className="h-4 w-4 text-yellow-500" />;
+  const getStatusIcon = (alarm: MyGekkoAlarm) => {
+    if (alarm.resolved) {
+      return <CheckCircle className="h-4 w-4 text-green-500" />;
+    } else if (alarm.acknowledged) {
+      return <Clock className="h-4 w-4 text-yellow-500" />;
+    } else {
+      return <AlertTriangle className="h-4 w-4 text-red-500" />;
     }
   };
 
@@ -106,22 +148,22 @@ export function SystemAlarmsMonitor() {
     return new Date(dateString).toLocaleString();
   };
 
-  const formatDuration = (startTime: string, endTime?: string) => {
-    const start = new Date(startTime);
-    const end = endTime ? new Date(endTime) : new Date();
-    const duration = end.getTime() - start.getTime();
+  const formatDuration = (timestamp: string) => {
+    const start = new Date(timestamp);
+    const now = new Date();
+    const duration = now.getTime() - start.getTime();
     
     const hours = Math.floor(duration / (1000 * 60 * 60));
     const minutes = Math.floor((duration % (1000 * 60 * 60)) / (1000 * 60));
     
     if (hours > 0) {
-      return `${hours}h ${minutes}m`;
+      return `${hours}h ${minutes}m ago`;
     }
-    return `${minutes}m`;
+    return `${minutes}m ago`;
   };
 
-  const activeAlarms = alarms.filter(alarm => alarm.status === 'active');
-  const criticalAlarms = alarms.filter(alarm => alarm.severity === 'critical' || alarm.severity === 'high');
+  const activeAlarms = alarms.filter(alarm => !alarm.resolved);
+  const criticalAlarms = alarms.filter(alarm => alarm.priority === 'critical' || alarm.priority === 'high' || alarm.priority === '1');
 
   return (
     <Card>
@@ -133,7 +175,7 @@ export function SystemAlarmsMonitor() {
               System Alarms Monitor
             </CardTitle>
             <CardDescription>
-              Real-time monitoring of system alerts and maintenance notifications
+              Real-time monitoring of myGEKKO system alerts and notifications
             </CardDescription>
           </div>
           <div className="flex gap-2">
@@ -187,7 +229,7 @@ export function SystemAlarmsMonitor() {
               </div>
             ) : (
               alarms.map((alarm) => {
-                const AlarmIcon = getAlarmIcon(alarm.alarm_type);
+                const AlarmIcon = getAlarmIcon(alarm.category);
                 return (
                   <div
                     key={alarm.id}
@@ -204,21 +246,26 @@ export function SystemAlarmsMonitor() {
                             {alarm.description}
                           </p>
                           <div className="flex items-center gap-2 mt-1">
-                            <Badge variant={getAlarmColor(alarm.severity)} className="text-xs">
-                              {alarm.severity}
+                            <Badge variant={getAlarmColor(alarm.priority)} className="text-xs">
+                              {alarm.priority}
                             </Badge>
                             <Badge variant="outline" className="text-xs">
-                              {alarm.alarm_type}
+                              {alarm.category}
                             </Badge>
+                            {alarm.acknowledged && (
+                              <Badge variant="secondary" className="text-xs">
+                                Acknowledged
+                              </Badge>
+                            )}
                           </div>
                         </div>
                         
                         <div className="flex items-center gap-2">
-                          {getStatusIcon(alarm.status)}
+                          {getStatusIcon(alarm)}
                           <div className="text-xs text-muted-foreground text-right">
-                            <div>{formatDate(alarm.start_time)}</div>
+                            <div>{formatDate(alarm.timestamp)}</div>
                             <div className="font-medium">
-                              Duration: {formatDuration(alarm.start_time, alarm.end_time)}
+                              {formatDuration(alarm.timestamp)}
                             </div>
                           </div>
                         </div>
@@ -234,27 +281,27 @@ export function SystemAlarmsMonitor() {
           <div className="grid grid-cols-4 gap-4 pt-4 border-t">
             <div className="text-center">
               <div className="text-lg font-bold text-red-600">
-                {alarms.filter(a => a.alarm_type === 'connection').length}
+                {alarms.filter(a => a.category.toLowerCase().includes('connection') || a.category.toLowerCase().includes('network')).length}
               </div>
-              <div className="text-xs text-muted-foreground">Connection</div>
+              <div className="text-xs text-muted-foreground">Network</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-orange-600">
-                {alarms.filter(a => a.alarm_type === 'hardware').length}
+                {alarms.filter(a => a.category.toLowerCase().includes('hardware') || a.category.toLowerCase().includes('device')).length}
               </div>
               <div className="text-xs text-muted-foreground">Hardware</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-blue-600">
-                {alarms.filter(a => a.alarm_type === 'heating').length}
+                {alarms.filter(a => a.category.toLowerCase().includes('heating') || a.category.toLowerCase().includes('hvac')).length}
               </div>
-              <div className="text-xs text-muted-foreground">Heating</div>
+              <div className="text-xs text-muted-foreground">HVAC</div>
             </div>
             <div className="text-center">
               <div className="text-lg font-bold text-green-600">
-                {alarms.filter(a => a.alarm_type === 'configuration').length}
+                {alarms.filter(a => a.category.toLowerCase().includes('system') || a.category.toLowerCase().includes('config')).length}
               </div>
-              <div className="text-xs text-muted-foreground">Config</div>
+              <div className="text-xs text-muted-foreground">System</div>
             </div>
           </div>
         </div>
