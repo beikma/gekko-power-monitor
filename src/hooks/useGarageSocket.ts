@@ -120,8 +120,14 @@ export function useGarageSocket() {
         value: value
       });
 
-      console.log(`🚀 Direct command to lights/${socket.id}/scmd with value=${value}`);
-      const response = await fetch(`${proxyUrl}?${cmdParams}`);
+      console.log(`🚀 Direct POST command to lights/${socket.id}/scmd with value=${value}`);
+      const response = await fetch(`${proxyUrl}?${cmdParams}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `value=${value}`
+      });
       const responseText = await response.text();
       const duration = Date.now() - startTime;
       

@@ -97,8 +97,14 @@ export function SocketAnalyzer() {
         value: value
       });
 
-      console.log(`🚀 Direct command to lights/${socketId}/scmd with value=${value}`);
-      const response = await fetch(`${proxyUrl}?${cmdParams}`);
+      console.log(`🚀 Direct POST command to lights/${socketId}/scmd with value=${value}`);
+      const response = await fetch(`${proxyUrl}?${cmdParams}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `value=${value}`
+      });
       const responseText = await response.text();
       
       console.log(`📡 API Response → ${response.status}: ${responseText}`);
