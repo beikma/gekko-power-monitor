@@ -212,32 +212,38 @@ export function useGarageSocket() {
 function findGarageSocket(gekkoData: any): { id: string; name: string; location: string } | null {
   console.log('🔍 Searching for controllable garage socket in myGEKKO data:', gekkoData);
   
-  // Search in all possible sections for garage socket
-  const sectionsToSearch = ['loads', 'lights', 'outlets', 'sockets'];
+  // Log all available devices for debugging
+  if (gekkoData.lights) {
+    console.log('🔍 Available lights devices:');
+    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
+      const item = itemData as any;
+      if (item.name) {
+        console.log(`  - ${itemKey}: "${item.name}" (page: ${item.page || 'none'})`);
+      }
+    }
+  }
   
-  for (const section of sectionsToSearch) {
-    if (gekkoData[section] && typeof gekkoData[section] === 'object') {
-      console.log(`🔍 Searching in ${section} section...`);
+  // Based on user feedback, look for specific device patterns
+  // Check lights section first since garage socket might be listed there
+  if (gekkoData.lights && typeof gekkoData.lights === 'object') {
+    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
+      const item = itemData as any;
+      console.log(`🔍 Checking lights/${itemKey}:`, item);
       
-      for (const [itemKey, itemData] of Object.entries(gekkoData[section])) {
-        const item = itemData as any;
-        console.log(`🔍 Checking ${section}/${itemKey}:`, item);
+      if (item.name && item.scmd?.index) {
+        const name = item.name.toLowerCase();
+        const page = (item.page || '').toLowerCase();
         
-        // Look for items that could be garage sockets
-        if (item.name && item.scmd?.index) {
-          const name = item.name.toLowerCase();
-          const page = (item.page || '').toLowerCase();
-          
-          // Specifically look for garage-related terms
-          if (name.includes('garage') || page.includes('garage') || 
-              name.includes('stellplatz') || name.includes('parking')) {
-            console.log(`✅ Found garage device: ${itemKey} - ${item.name} in ${section} (index: ${item.scmd.index})`);
-            return {
-              id: itemKey,
-              name: item.name,
-              location: item.page || section
-            };
-          }
+        // Look for socket-related terms or garage-specific identifiers
+        if (name.includes('garage') || page.includes('garage') || 
+            name.includes('stellplatz') || name.includes('parking') ||
+            name.includes('steckdose') || name.includes('socket')) {
+          console.log(`✅ Found garage socket: ${itemKey} - ${item.name} (index: ${item.scmd.index})`);
+          return {
+            id: itemKey,
+            name: item.name,
+            location: item.page || 'lights'
+          };
         }
       }
     }
