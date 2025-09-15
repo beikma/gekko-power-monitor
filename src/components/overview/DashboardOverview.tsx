@@ -141,7 +141,17 @@ export function DashboardOverview() {
       {buildingInfo && (
         <Card className="overflow-hidden">
           <div className="relative">
-            <CardHeader>
+            {buildingInfo.image_url && (
+              <div className="h-32 bg-gradient-to-r from-primary/10 to-primary/5 relative overflow-hidden">
+                <img 
+                  src={buildingInfo.image_url} 
+                  alt={buildingInfo.building_name}
+                  className="absolute inset-0 w-full h-full object-cover opacity-20"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-background/80 to-background/40" />
+              </div>
+            )}
+            <CardHeader className={buildingInfo.image_url ? "relative -mt-16 z-10" : ""}>
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <CardTitle className="flex items-center gap-2 text-2xl">

@@ -23,6 +23,7 @@ interface ManualBuildingInfo {
   cooling_system?: string;
   renewable_energy?: boolean;
   solar_panels?: boolean;
+  image_url?: string;
   notes?: string;
 }
 
