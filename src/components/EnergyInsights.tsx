@@ -3,9 +3,51 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useEnergyAI } from "@/hooks/useEnergyAI";
+import { useEnergyReadings } from "@/hooks/useEnergyReadings";
+import { supabase } from "@/integrations/supabase/client";
 
 export default function EnergyInsights() {
   const { insights, isAnalyzing, triggerAIAnalysis } = useEnergyAI();
+  const { latestReading } = useEnergyReadings();
+  
+  const triggerEnhancedAnalysis = async () => {
+    // Get building info for context
+    const { data: buildingInfo } = await supabase
+      .from('building_info')
+      .select('*')
+      .limit(1)
+      .maybeSingle();
+    
+    // Get weather context if building location available
+    let weatherContext = null;
+    if (buildingInfo?.latitude && buildingInfo?.longitude) {
+      try {
+        const weatherResponse = await fetch(
+          `https://api.open-meteo.com/v1/current?latitude=${buildingInfo.latitude}&longitude=${buildingInfo.longitude}&current=temperature_2m,relative_humidity_2m,weather_code,wind_speed_10m`
+        );
+        weatherContext = await weatherResponse.json();
+      } catch (error) {
+        console.log('Weather data not available');
+      }
+    }
+    
+    // Store enhanced energy reading with context
+    if (latestReading && buildingInfo) {
+      await supabase.from('energy_readings').insert({
+        current_power: latestReading.current_power,
+        daily_energy: latestReading.daily_energy,
+        battery_level: latestReading.battery_level,
+        pv_power: latestReading.pv_power,
+        grid_power: latestReading.grid_power,
+        temperature: weatherContext?.current?.temperature_2m,
+        humidity: weatherContext?.current?.relative_humidity_2m,
+        weather_condition: weatherContext?.current?.weather_code ? `Code_${weatherContext.current.weather_code}` : null
+      });
+    }
+    
+    // Trigger AI analysis with enhanced context
+    await triggerAIAnalysis();
+  };
 
   const getSeverityIcon = (severity: string) => {
     switch (severity) {
@@ -42,7 +84,7 @@ export default function EnergyInsights() {
             AI Energy Insights
           </CardTitle>
           <Button
-            onClick={triggerAIAnalysis}
+            onClick={triggerEnhancedAnalysis}
             disabled={isAnalyzing}
             variant="outline"
             size="sm"
@@ -55,7 +97,7 @@ export default function EnergyInsights() {
             ) : (
               <>
                 <TrendingUp className="h-4 w-4 mr-2" />
-                Analyze
+                Enhanced Analysis
               </>
             )}
           </Button>
@@ -66,7 +108,7 @@ export default function EnergyInsights() {
           <div className="text-center py-8 text-muted-foreground">
             <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
             <p>No insights available yet</p>
-            <p className="text-sm">Click "Analyze" to generate AI-powered recommendations</p>
+            <p className="text-sm">Click "Enhanced Analysis" to generate AI insights using real data + weather context</p>
           </div>
         ) : (
           <div className="space-y-4">
