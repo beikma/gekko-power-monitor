@@ -42,7 +42,7 @@ export function SocketAnalyzer() {
       if (statusData.loads) {
         const socketList: SocketData[] = [];
         
-        // Parse all load items (sockets)
+        // Parse all load items (sockets/plugs only, exclude lights)
         Object.entries(statusData.loads).forEach(([key, value]: [string, any]) => {
           if (key.startsWith('item') && value.sumstate?.value) {
             const rawValue = value.sumstate.value;
@@ -54,19 +54,29 @@ export function SocketAnalyzer() {
             
             // Get device name from var data (loads section for sockets)
             const deviceInfo = varData.loads?.[key];
-            const name = deviceInfo?.name || `Unknown ${key}`;
+            const name = deviceInfo?.name || `Socket ${key}`;
             const page = deviceInfo?.page || 'Unknown';
             
-            console.log(`📊 Socket ${key}: ${name} (${page}) - Status: ${status}`);
+            // Filter out lights - only include actual sockets/plugs/power outlets
+            const nameStr = name.toLowerCase();
+            const isLight = nameStr.includes('licht') || nameStr.includes('light') || 
+                           nameStr.includes('beleuchtung') || nameStr.includes('lamp') ||
+                           nameStr.includes('led') || nameStr.includes('spots');
             
-            socketList.push({
-              id: key,
-              name,
-              page,
-              state: stateCode,
-              status,
-              rawValue
-            });
+            if (!isLight) {
+              console.log(`📊 Socket ${key}: ${name} (${page}) - Status: ${status}`);
+              
+              socketList.push({
+                id: key,
+                name,
+                page,
+                state: stateCode,
+                status,
+                rawValue
+              });
+            } else {
+              console.log(`💡 Skipping light device ${key}: ${name}`);
+            }
           }
         });
         
@@ -209,7 +219,7 @@ export function SocketAnalyzer() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Socket Analyzer - All {sockets.length} Sockets</CardTitle>
+          <CardTitle>Socket Analyzer - {sockets.length} Power Sockets/Plugs</CardTitle>
           <Button 
             onClick={fetchSocketData} 
             disabled={isLoading}
@@ -228,7 +238,7 @@ export function SocketAnalyzer() {
             <div className="grid grid-cols-3 gap-4 text-center">
               <div>
                 <div className="text-2xl font-bold">{sockets.length}</div>
-                <div className="text-sm text-muted-foreground">Total Sockets</div>
+                <div className="text-sm text-muted-foreground">Power Outlets</div>
               </div>
               <div>
                 <div className="text-2xl font-bold text-green-600">
@@ -307,12 +317,12 @@ export function SocketAnalyzer() {
 
           {/* Instructions */}
           <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
-            <h3 className="font-medium text-blue-900 mb-2">🔍 Identify Your Garage Socket:</h3>
+            <h3 className="font-medium text-blue-900 mb-2">🔌 Power Sockets/Plugs Only:</h3>
             <ol className="text-sm text-blue-800 space-y-1">
-              <li>1. Look for sockets with status "ON" (green background)</li>
-              <li>2. Test each ON socket by clicking "OFF" to see which one controls your garage</li>
-              <li>3. The garage socket should turn off when you click its OFF button</li>
-              <li>4. Once identified, click "ON" again to turn it back on</li>
+              <li>1. Only showing actual power outlets from loads section (no lights)</li>
+              <li>2. Look for sockets with status "ON" (green background)</li>
+              <li>3. Test each socket by clicking OFF/ON to identify your garage socket</li>
+              <li>4. The garage socket should respond when you toggle it</li>
             </ol>
           </div>
         </div>
