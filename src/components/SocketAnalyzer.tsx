@@ -52,8 +52,8 @@ export function SocketAnalyzer() {
             if (stateCode === '1') status = 'ON';
             else if (stateCode === '2') status = 'FORCED_ON';
             
-            // Get device name from var data
-            const deviceInfo = varData.lights?.[key];
+            // Get device name from var data (loads section for sockets)
+            const deviceInfo = varData.loads?.[key];
             const name = deviceInfo?.name || `Unknown ${key}`;
             const page = deviceInfo?.page || 'Unknown';
             
@@ -118,9 +118,9 @@ export function SocketAnalyzer() {
       const infoResponse = await fetch(`${proxyUrl}?endpoint=var&${baseParams}`);
       const infoData = await infoResponse.json();
       
-      console.log(`📊 Device info for ${socketId}:`, infoData.lights?.[socketId]);
+      console.log(`📊 Device info for ${socketId}:`, infoData.loads?.[socketId]);
       
-      const deviceIndex = infoData.lights?.[socketId]?.scmd?.index;
+      const deviceIndex = infoData.loads?.[socketId]?.scmd?.index;
       console.log(`🔢 Found device index: ${deviceIndex}`);
       
       if (!deviceIndex) {
@@ -154,18 +154,18 @@ export function SocketAnalyzer() {
         console.log(`❌ Method 1 failed:`, error);
       }
 
-      // Method 2: lights-specific command if Method 1 didn't work
+      // Method 2: loads-specific command if Method 1 didn't work
       if (!success) {
         try {
           const cmdParams2 = new URLSearchParams({
-            endpoint: `lights/${socketId}/scmd`,
+            endpoint: `var/loads/${socketId}/scmd/set`,
             username: 'mustermann@my-gekko.com',
             key: 'HjR9j4BrruA8wZiBeiWXnD',
             gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
             value: value
           });
 
-          console.log(`🚀 Trying Method 2: lights/${socketId}/scmd with value=${value}`);
+          console.log(`🚀 Trying Method 2: var/loads/${socketId}/scmd/set with value=${value}`);
           const response2 = await fetch(`${proxyUrl}?${cmdParams2}`);
           const responseText2 = await response2.text();
           console.log(`📡 Method 2 Response → ${response2.status}: ${responseText2}`);
@@ -209,7 +209,7 @@ export function SocketAnalyzer() {
     <Card className="w-full">
       <CardHeader>
         <div className="flex items-center justify-between">
-          <CardTitle>Socket Analyzer - All 18 Sockets</CardTitle>
+          <CardTitle>Socket Analyzer - All {sockets.length} Sockets</CardTitle>
           <Button 
             onClick={fetchSocketData} 
             disabled={isLoading}
