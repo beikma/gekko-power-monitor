@@ -53,11 +53,9 @@ export function useDirectGekkoApi() {
     try {
       console.log(`Toggling light ${itemId} to ${turnOn ? 'ON' : 'OFF'} via gekko-proxy`);
       
-      // Try different command formats
+      // Try correct myGEKKO API format from documentation
       const commands = [
-        `var/lights/${itemId}/scmd?value=${turnOn ? '1' : '0'}`,
-        `var/lights/${itemId}/set?value=${turnOn ? '1' : '0'}`,
-        `var/lights/${itemId}?scmd=${turnOn ? '1' : '0'}`
+        `var/lights/${itemId}/scmd/set?value=${turnOn ? '1' : '0'}`,
       ];
 
       let lastError: any;
@@ -93,11 +91,9 @@ export function useDirectGekkoApi() {
     try {
       console.log(`Setting light ${itemId} dim to ${dimLevel}% via gekko-proxy`);
       
-      // Try different dimming command formats
+      // Try correct myGEKKO API format from documentation
       const commands = [
-        `var/lights/${itemId}/scmd?value=D${dimLevel}`,
-        `var/lights/${itemId}/set?value=D${dimLevel}`,
-        `var/lights/${itemId}?scmd=D${dimLevel}`
+        `var/lights/${itemId}/scmd/set?value=D${dimLevel}`,
       ];
 
       let lastError: any;
@@ -135,11 +131,9 @@ export function useDirectGekkoApi() {
       const rgb = parseInt(rgbHex.replace('#', ''), 16);
       console.log(`Setting light ${itemId} color to RGB: ${rgb} (${rgbHex}) via gekko-proxy`);
       
-      // Try different color command formats
+      // Try correct myGEKKO API format from documentation
       const commands = [
-        `var/lights/${itemId}/scmd?value=C${rgb}`,
-        `var/lights/${itemId}/set?value=C${rgb}`,
-        `var/lights/${itemId}?scmd=C${rgb}`
+        `var/lights/${itemId}/scmd/set?value=C${rgb}`,
       ];
 
       let lastError: any;

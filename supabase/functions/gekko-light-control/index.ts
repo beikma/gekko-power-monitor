@@ -117,10 +117,10 @@ async function toggleAllLights(username: string, key: string, gekkoId: string) {
     const lightCommands = [];
     
     for (const lightItem of lightItems) {
-      // Try using the command index instead of item ID
-      const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${lightItem.commandIndex}&value=${command}`;
+      // Use correct myGEKKO API format: /var/lights/itemX/scmd/set
+      const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/lights/${lightItem.id}/scmd/set&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
       
-      console.log(`Sending command to light ${lightItem.id} (index ${lightItem.commandIndex}): ${commandUrl}`);
+      console.log(`Sending command to light ${lightItem.id}: ${commandUrl}`);
       
       lightCommands.push(
         fetch(commandUrl, { 
@@ -184,31 +184,11 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
       const commandIndex = schemaData.lights?.[lightId]?.scmd?.index;
       console.log(`Command index for ${lightId}: ${commandIndex}`);
       
-      // Try the exact same pattern as working API calls but with command execution
+      // Use the correct myGEKKO API format from documentation
       const testFormats = [
         {
-          name: "scmd endpoint execution",
-          url: `https://live.my-gekko.com/api/v1/scmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
-          method: 'GET'
-        },
-        {
-          name: "var endpoint with command",
-          url: `https://live.my-gekko.com/api/v1/var?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&cmd=${lightId}&value=${newState}`,
-          method: 'GET'
-        },
-        {
-          name: "item direct command",
-          url: `https://live.my-gekko.com/api/v1/${lightId}?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&cmd=scmd&value=${newState}`,
-          method: 'GET'
-        },
-        {
-          name: "lights command path",
-          url: `https://live.my-gekko.com/api/v1/lights/${lightId}?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`,
-          method: 'GET'
-        },
-        {
-          name: "command with index direct",
-          url: `https://live.my-gekko.com/api/v1/cmd?username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&index=${commandIndex}&value=${newState}`,
+          name: "correct API format /var/lights/item/scmd/set",
+          url: `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/lights/${lightId}/scmd/set&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`,
           method: 'GET'
         }
       ];
@@ -274,8 +254,8 @@ async function toggleSingleLight(username: string, key: string, gekkoId: string,
       };
     }
     
-    // For other lights, use the original format for now
-    const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`;
+    // Use correct myGEKKO API format: /var/lights/itemX/scmd/set  
+    const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/lights/${lightId}/scmd/set&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${newState}`;
     
     console.log(`Toggling light ${lightId} from ${currentState} to ${newState}`);
     console.log(`Command URL: ${commandUrl}`);
@@ -310,7 +290,7 @@ async function setBrightness(username: string, key: string, gekkoId: string, lig
     // Format: D followed by brightness percentage (0-100)
     const command = `D${Math.max(0, Math.min(100, brightness))}`;
     
-    const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/${lightId}/scmd&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
+    const commandUrl = `https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy?endpoint=var/lights/${lightId}/scmd/set&username=${encodeURIComponent(username)}&key=${key}&gekkoid=${gekkoId}&value=${command}`;
     
     console.log(`Setting brightness for ${lightId} to ${brightness}%`);
     console.log(`Command URL: ${commandUrl}`);
