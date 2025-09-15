@@ -13,12 +13,17 @@ import {
   Activity,
   ArrowRight,
   MessageSquare,
-  Home
+  Home,
+  Building2,
+  MapPin,
+  Calendar,
+  Users
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
 import { useEnergyReadings } from "@/hooks/useEnergyReadings";
 import { useRecentAlarms } from "@/hooks/useRecentAlarms";
+import { useBuildingData } from '@/hooks/useBuildingData';
 import { getRoomName } from '@/utils/roomMapping';
 
 export function DashboardOverview() {
@@ -28,6 +33,7 @@ export function DashboardOverview() {
   });
   const { latestReading } = useEnergyReadings();
   const { alarms, activeAlarms, criticalAlarms } = useRecentAlarms(3);
+  const { manualInfo: buildingInfo } = useBuildingData();
 
   // Calculate quick stats
   const lights = data?.lights || {};
@@ -131,6 +137,78 @@ export function DashboardOverview() {
 
   return (
     <div className="space-y-8">
+      {/* Building Overview Header */}
+      {buildingInfo && (
+        <Card className="overflow-hidden">
+          <div className="relative">
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="space-y-1">
+                  <CardTitle className="flex items-center gap-2 text-2xl">
+                    <Building2 className="h-6 w-6 text-primary" />
+                    {buildingInfo.building_name}
+                  </CardTitle>
+                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                    {buildingInfo.address && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        <span>{buildingInfo.address}</span>
+                        {buildingInfo.city && <span>, {buildingInfo.city}</span>}
+                      </div>
+                    )}
+                    {buildingInfo.year_built && (
+                      <div className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        <span>Baujahr {buildingInfo.year_built}</span>
+                      </div>
+                    )}
+                    {buildingInfo.occupancy && (
+                      <div className="flex items-center gap-1">
+                        <Users className="h-4 w-4" />
+                        <span>{buildingInfo.occupancy} Bewohner</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="text-right space-y-1">
+                  <Badge variant="outline" className="font-mono text-xs">
+                    ID: {data?.globals?.gekkoid || 'K999-7UOZ-8ZYZ-6TH3'}
+                  </Badge>
+                  {buildingInfo.building_type && (
+                    <Badge variant="secondary" className="block">
+                      {buildingInfo.building_type}
+                    </Badge>
+                  )}
+                </div>
+              </div>
+              
+              {(buildingInfo.total_area || buildingInfo.rooms || buildingInfo.floors) && (
+                <div className="flex gap-6 pt-2 text-sm">
+                  {buildingInfo.total_area && (
+                    <div>
+                      <span className="text-muted-foreground">Fläche:</span>
+                      <span className="ml-1 font-medium">{buildingInfo.total_area} m²</span>
+                    </div>
+                  )}
+                  {buildingInfo.rooms && (
+                    <div>
+                      <span className="text-muted-foreground">Räume:</span>
+                      <span className="ml-1 font-medium">{buildingInfo.rooms}</span>
+                    </div>
+                  )}
+                  {buildingInfo.floors && (
+                    <div>
+                      <span className="text-muted-foreground">Etagen:</span>
+                      <span className="ml-1 font-medium">{buildingInfo.floors}</span>
+                    </div>
+                  )}
+                </div>
+              )}
+            </CardHeader>
+          </div>
+        </Card>
+      )}
+
       {/* Quick Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {quickStats.map((stat) => (
