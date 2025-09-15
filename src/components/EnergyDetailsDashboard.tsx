@@ -5,22 +5,24 @@ import { Progress } from "@/components/ui/progress";
 
 interface EnergyDetailsDashboardProps {
   data: any;
+  refetch?: () => void;
 }
 
-export default function EnergyDetailsDashboard({ data }: EnergyDetailsDashboardProps) {
+export default function EnergyDetailsDashboard({ data, refetch }: EnergyDetailsDashboardProps) {
   // Debug logging
   console.log('EnergyDetailsDashboard received data:', data);
   console.log('EnergyDetailsDashboard energycosts:', data?.energycosts);
   
-  // Extract energy costs data
+  // Extract energy costs data with real names
   const energyCosts = data?.energycosts || {};
   const energyMeters = Object.entries(energyCosts)
     .filter(([key]) => key.startsWith('item'))
     .map(([key, meter]: [string, any]) => {
       const values = meter.sumstate?.value?.split(';') || [];
+      const meterName = meter.name || `Energy Meter ${key.replace('item', '')}`;
       return {
         id: key,
-        name: `Meter ${key.replace('item', '')}`,
+        name: meterName,
         currentPower: parseFloat(values[0]) || 0, // kW
         dailyEnergy: parseFloat(values[1]) || 0, // kWh today
         monthlyEnergy: parseFloat(values[2]) || 0, // kWh this month

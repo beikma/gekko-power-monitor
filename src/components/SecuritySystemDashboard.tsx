@@ -5,22 +5,24 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface SecuritySystemDashboardProps {
   data: any;
+  refetch?: () => void;
 }
 
-export default function SecuritySystemDashboard({ data }: SecuritySystemDashboardProps) {
+export default function SecuritySystemDashboard({ data, refetch }: SecuritySystemDashboardProps) {
   // Extract alarm system status
   const alarmSystem = data?.globals?.alarm?.sumstate?.value;
   const systemStatus = parseInt(alarmSystem) || 3; // 3 = Normal
 
-  // Extract alarm logics (sensors and monitoring)
+  // Extract alarm logics (sensors and monitoring) with real names
   const alarmLogics = data?.alarms_logics || {};
   const sensors = Object.entries(alarmLogics)
     .filter(([key]) => key.startsWith('item'))
     .map(([key, sensor]: [string, any]) => {
       const values = sensor.sumstate?.value?.split(';') || [];
+      const sensorName = sensor.name || `Sensor ${key.replace('item', '')}`;
       return {
         id: key,
-        name: `Sensor ${key.replace('item', '')}`,
+        name: sensorName,
         value1: parseFloat(values[0]) || 0,
         value2: parseFloat(values[1]) || 0,
         value3: parseFloat(values[2]) || 0,
@@ -32,15 +34,16 @@ export default function SecuritySystemDashboard({ data }: SecuritySystemDashboar
     })
     .filter(sensor => sensor.isActive);
 
-  // Extract blinds/shutters status for security
+  // Extract blinds/shutters status for security with real names
   const blinds = data?.blinds || {};
   const shutterItems = Object.entries(blinds)
     .filter(([key]) => key.startsWith('item'))
     .map(([key, blind]: [string, any]) => {
       const values = blind.sumstate?.value?.split(';') || [];
+      const shutterName = blind.name || `Shutter ${key.replace('item', '')}`;
       return {
         id: key,
-        name: `Shutter ${key.replace('item', '')}`,
+        name: shutterName,
         position: parseFloat(values[1]) || 0,
         isOpen: parseFloat(values[1]) > 50,
         isClosed: parseFloat(values[1]) < 10,

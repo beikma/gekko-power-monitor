@@ -115,7 +115,7 @@ const App: React.FC = () => {
 
 // Wrapper components with data fetching - defined as proper React components
 const EnergyDashboard: React.FC = () => {
-  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  const { data, status, isLoading, error, refetch } = useGekkoApi({ refreshInterval: 30000 });
   
   // Debug logging
   console.log('EnergyDashboard data:', { data, status, isLoading, error });
@@ -123,7 +123,7 @@ const EnergyDashboard: React.FC = () => {
   if (isLoading) return <div className="p-6 text-center">Loading energy data...</div>;
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
-  return <EnergyDetailsDashboard data={status} />;
+  return <EnergyDetailsDashboard data={status} refetch={refetch} />;
 };
 
 const LightingDashboard: React.FC = () => {
@@ -139,7 +139,7 @@ const LightingDashboard: React.FC = () => {
 };
 
 const ClimateDashboard: React.FC = () => {
-  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  const { data, status, isLoading, error, refetch } = useGekkoApi({ refreshInterval: 30000 });
   
   // Debug logging
   console.log('ClimateDashboard data:', { data, status, isLoading, error });
@@ -147,12 +147,12 @@ const ClimateDashboard: React.FC = () => {
   if (isLoading) return <div className="p-6 text-center">Loading climate data...</div>;
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
-  return <ClimateControlDashboard data={status} />;
+  return <ClimateControlDashboard data={status} refetch={refetch} />;
 };
 
 const SecurityDashboard: React.FC = () => {
-  const { data, status } = useGekkoApi({ refreshInterval: 30000 });
-  return <SecuritySystemDashboard data={data} />;
+  const { data, status, refetch } = useGekkoApi({ refreshInterval: 30000 });
+  return <SecuritySystemDashboard data={status} refetch={refetch} />;
 };
 
 const AnalyticsDashboard: React.FC = () => {

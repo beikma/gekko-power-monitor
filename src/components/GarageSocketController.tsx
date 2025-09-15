@@ -10,7 +10,7 @@ import { SocketScheduler } from './SocketScheduler';
 import { useToast } from '@/hooks/use-toast';
 
 export function GarageSocketController() {
-  const { socket, isLoading, error, toggleSocket, updateSchedule } = useGarageSocket();
+  const { socket, isLoading, error, toggleSocket, updateSchedule, refetch } = useGarageSocket();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('control');
 

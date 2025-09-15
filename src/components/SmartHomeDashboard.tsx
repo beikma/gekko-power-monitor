@@ -260,7 +260,7 @@ export default function SmartHomeDashboard({
         </TabsContent>
 
         <TabsContent value="climate" className="mt-6">
-          <ClimateControlDashboard data={status} />
+          <ClimateControlDashboard data={status} refetch={refetch} />
         </TabsContent>
 
         <TabsContent value="lighting" className="mt-6">
@@ -268,11 +268,11 @@ export default function SmartHomeDashboard({
         </TabsContent>
 
         <TabsContent value="energy" className="mt-6">
-          <EnergyDetailsDashboard data={status} />
+          <EnergyDetailsDashboard data={status} refetch={refetch} />
         </TabsContent>
 
         <TabsContent value="security" className="mt-6">
-          <SecuritySystemDashboard data={status} />
+          <SecuritySystemDashboard data={status} refetch={refetch} />
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">

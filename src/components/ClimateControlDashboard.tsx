@@ -5,9 +5,10 @@ import { Progress } from "@/components/ui/progress";
 
 interface ClimateControlDashboardProps {
   data: any;
+  refetch?: () => void;
 }
 
-export default function ClimateControlDashboard({ data }: ClimateControlDashboardProps) {
+export default function ClimateControlDashboard({ data, refetch }: ClimateControlDashboardProps) {
   // Debug logging
   console.log('ClimateControlDashboard received data:', data);
   console.log('ClimateControlDashboard weather:', data?.globals?.meteo);
@@ -19,14 +20,17 @@ export default function ClimateControlDashboard({ data }: ClimateControlDashboar
   const humidity = parseFloat(weather.humidity?.value) || 0;
   const windSpeed = parseFloat(weather.wind?.value) || 0;
 
-  // Extract room temperatures
+  // Extract room temperatures with real names from schema
   const roomTemps = data?.roomtemps || {};
   const rooms = Object.entries(roomTemps)
     .filter(([key]) => key.startsWith('item'))
     .map(([key, room]: [string, any]) => {
       const values = room.sumstate?.value?.split(';') || [];
+      // Get real room name from schema if available
+      const roomName = room.name || `Room ${key.replace('item', '')}`;
       return {
         id: key,
+        name: roomName,
         current: parseFloat(values[0]) || 0,
         target: parseFloat(values[1]) || 0,
         valve: parseFloat(values[2]) || 0,
@@ -36,14 +40,16 @@ export default function ClimateControlDashboard({ data }: ClimateControlDashboar
     })
     .filter(room => room.current > 0);
 
-  // Extract heating circuits
+  // Extract heating circuits with real names
   const heatingCircuits = data?.heatingcircuits || {};
   const circuits = Object.entries(heatingCircuits)
     .filter(([key]) => key.startsWith('item'))
     .map(([key, circuit]: [string, any]) => {
       const values = circuit.sumstate?.value?.split(';') || [];
+      const circuitName = circuit.name || `Circuit ${key.replace('item', '')}`;
       return {
         id: key,
+        name: circuitName,
         flow: parseFloat(values[1]) || 0,
         return: parseFloat(values[2]) || 0,
         pump: parseFloat(values[4]) || 0,
@@ -51,14 +57,16 @@ export default function ClimateControlDashboard({ data }: ClimateControlDashboar
       };
     });
 
-  // Extract ventilation data
+  // Extract ventilation data with real names
   const vents = data?.vents || {};
   const ventilation = Object.entries(vents)
     .filter(([key]) => key.startsWith('item'))
     .map(([key, vent]: [string, any]) => {
       const values = vent.sumstate?.value?.split(';') || [];
+      const ventName = vent.name || `Ventilation ${key.replace('item', '')}`;
       return {
         id: key,
+        name: ventName,
         speed: parseInt(values[1]) || 0,
         mode: parseInt(values[4]) || 0,
         supply: parseFloat(values[8]) || 0,
@@ -145,10 +153,10 @@ export default function ClimateControlDashboard({ data }: ClimateControlDashboar
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {ventilation.slice(0, 3).map((vent, index) => (
+              {ventilation.slice(0, 3).map((vent) => (
                 <div key={vent.id} className="flex items-center justify-between">
                   <div>
-                    <span className="text-sm font-medium">Zone {index + 1}</span>
+                    <span className="text-sm font-medium">{vent.name}</span>
                     <div className="text-xs text-muted-foreground">
                       Supply: {vent.supply.toFixed(1)}°C | Extract: {vent.extract.toFixed(1)}°C
                     </div>
@@ -173,7 +181,7 @@ export default function ClimateControlDashboard({ data }: ClimateControlDashboar
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {rooms.map((room, index) => {
+            {rooms.map((room) => {
               const tempDiff = room.current - room.target;
               const getTrendIcon = () => {
                 if (tempDiff > 1) return <TrendingUp className="h-4 w-4 text-orange-500" />;
@@ -184,7 +192,7 @@ export default function ClimateControlDashboard({ data }: ClimateControlDashboar
               return (
                 <div key={room.id} className="p-3 border border-energy-border rounded-lg bg-energy-surface/30">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium text-sm">Room {index + 1}</span>
+                    <span className="font-medium text-sm">{room.name}</span>
                     {getTrendIcon()}
                   </div>
                   <div className="space-y-1">
@@ -222,10 +230,10 @@ export default function ClimateControlDashboard({ data }: ClimateControlDashboar
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              {circuits.map((circuit, index) => (
+              {circuits.map((circuit) => (
                 <div key={circuit.id} className="p-3 border border-energy-border rounded-lg">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-medium">Circuit {index + 1}</span>
+                    <span className="font-medium">{circuit.name}</span>
                     <Badge variant={circuit.active ? "default" : "secondary"}>
                       {circuit.active ? "Active" : "Inactive"}
                     </Badge>

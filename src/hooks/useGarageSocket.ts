@@ -108,7 +108,7 @@ export function useGarageSocket() {
     });
     
     try {
-      // First get device info to find the correct command index
+      // Use correct myGEKKO API format: /var/lights/itemX/scmd/set
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
       const value = newState ? '1' : '0';
       const baseParams = new URLSearchParams({
@@ -117,26 +117,16 @@ export function useGarageSocket() {
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
       });
 
-      // Get device info to find scmd index
-      const infoResponse = await fetch(`${proxyUrl}?endpoint=var&${baseParams}`);
-      const infoData = await infoResponse.json();
-      
-      const deviceIndex = infoData.lights?.[socket.id]?.scmd?.index;
-      if (!deviceIndex) {
-        throw new Error(`Could not find command index for ${socket.id}`);
-      }
-
-      // Send command using var/scmd with index
+      // Use correct myGEKKO API format: /var/lights/itemX/scmd/set
       const cmdParams = new URLSearchParams({
-        endpoint: 'var/scmd',
+        endpoint: `var/lights/${socket.id}/scmd/set`,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        index: deviceIndex.toString(),
         value: value
       });
 
-      console.log(`🚀 Command API call: var/scmd with index=${deviceIndex}, value=${value}`);
+      console.log(`🚀 Command API call: var/lights/${socket.id}/scmd/set with value=${value}`);
       const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
@@ -147,7 +137,7 @@ export function useGarageSocket() {
       apiLogger?.addLog({
         type: response.ok ? 'response' : 'error',
         method: 'POST',
-        url: `MyGekko API - var/loads/${socket.id}/scmd`,
+        url: `MyGekko API - var/lights/${socket.id}/scmd/set`,
         status: response.status,
         data: responseText,
         duration
@@ -156,6 +146,12 @@ export function useGarageSocket() {
       if (response.ok) {
         setSocket(prev => prev ? { ...prev, isOn: newState } : null);
         console.log(`✅ Socket toggle successful`);
+        
+        // Refresh data after successful command with a small delay
+        setTimeout(() => {
+          fetchSocketData();
+        }, 1500); // Wait 1.5 seconds for myGEKKO to process the command
+        
         return;
       } else {
         throw new Error(`HTTP ${response.status} - ${responseText}`);
