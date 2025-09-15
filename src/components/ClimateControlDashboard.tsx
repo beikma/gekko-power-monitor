@@ -2,6 +2,7 @@ import { Thermometer, Wind, Droplets, Gauge, TrendingUp, TrendingDown, Minus } f
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { getRoomName } from '@/utils/roomMapping';
 
 interface ClimateControlDashboardProps {
   data: any;
@@ -26,8 +27,8 @@ export default function ClimateControlDashboard({ data, refetch }: ClimateContro
     .filter(([key]) => key.startsWith('item'))
     .map(([key, room]: [string, any]) => {
       const values = room.sumstate?.value?.split(';') || [];
-      // Get real room name from schema if available
-      const roomName = room.name || `Room ${key.replace('item', '')}`;
+      // Get proper German room name using mapping
+      const roomName = getRoomName(key, room.name);
       return {
         id: key,
         name: roomName,
@@ -46,7 +47,7 @@ export default function ClimateControlDashboard({ data, refetch }: ClimateContro
     .filter(([key]) => key.startsWith('item'))
     .map(([key, circuit]: [string, any]) => {
       const values = circuit.sumstate?.value?.split(';') || [];
-      const circuitName = circuit.name || `Circuit ${key.replace('item', '')}`;
+      const circuitName = circuit.name || `Heizkreis ${key.replace('item', '')}`;
       return {
         id: key,
         name: circuitName,

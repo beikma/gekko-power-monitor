@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
+import { getRoomName } from '@/utils/roomMapping';
 
 export interface Point {
   id: string;
@@ -59,9 +60,22 @@ export function usePoints() {
   };
 
   const getPointsByRoom = (room: string) => {
-    return points.filter(point => 
-      point.room?.toLowerCase().includes(room.toLowerCase())
-    );
+    return points.filter(point => {
+      if (!point.room) return false;
+      
+      // Check if searching by German room name
+      const lowerRoom = room.toLowerCase();
+      const pointRoom = point.room.toLowerCase();
+      
+      // Direct match with stored room name
+      if (pointRoom.includes(lowerRoom)) {
+        return true;
+      }
+      
+      // Check if the point's room matches any of our German room names
+      const roomName = getRoomName(point.room, point.room);
+      return roomName.toLowerCase().includes(lowerRoom);
+    });
   };
 
   const getPointsByType = (type: string) => {

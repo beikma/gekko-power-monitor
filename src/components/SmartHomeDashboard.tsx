@@ -15,6 +15,7 @@ import EnergyDetailsDashboard from "./EnergyDetailsDashboard";
 import SecuritySystemDashboard from "./SecuritySystemDashboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { getRoomName } from '@/utils/roomMapping';
 
 interface SmartHomeDashboardProps {
   data: any;
@@ -44,18 +45,20 @@ export default function SmartHomeDashboard({
         key.startsWith('item') && parseInt(light.sumstate?.value?.split(';')[0]) === 1
       ).length;
 
-    // Room temperatures
+    // Room temperatures with proper German names
     const roomTemps = status?.roomtemps || {};
     const rooms = Object.entries(roomTemps)
       .filter(([key]) => key.startsWith('item'))
-      .map(([, room]: [string, any]) => {
+      .map(([key, room]: [string, any]) => {
         const values = room.sumstate?.value?.split(';') || [];
-        return parseFloat(values[0]) || 0;
+        const temp = parseFloat(values[0]) || 0;
+        const roomName = getRoomName(key, room.name);
+        return { name: roomName, temp };
       })
-      .filter(temp => temp > 0);
+      .filter(room => room.temp > 0);
     
     const avgTemp = rooms.length > 0 ? 
-      rooms.reduce((sum, temp) => sum + temp, 0) / rooms.length : 0;
+      rooms.reduce((sum, room) => sum + room.temp, 0) / rooms.length : 0;
 
     // Energy meters
     const energyCosts = status?.energycosts || {};

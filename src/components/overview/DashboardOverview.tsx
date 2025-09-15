@@ -19,6 +19,7 @@ import { useNavigate } from "react-router-dom";
 import { useGekkoApi } from "@/hooks/useGekkoApi";
 import { useEnergyReadings } from "@/hooks/useEnergyReadings";
 import { useRecentAlarms } from "@/hooks/useRecentAlarms";
+import { getRoomName } from '@/utils/roomMapping';
 
 export function DashboardOverview() {
   const navigate = useNavigate();
@@ -35,8 +36,11 @@ export function DashboardOverview() {
   ).length;
   const totalLights = Object.keys(lights).filter(key => key.startsWith('item')).length;
 
-  const temperature = status?.roomtemps?.item1?.sumstate?.value?.split(';')[0];
-  const targetTemp = status?.roomtemps?.item1?.sumstate?.value?.split(';')[1];
+  // Get first available room temperature with proper German name
+  const firstRoomData = status?.roomtemps?.item1;
+  const firstRoomName = getRoomName('item1', firstRoomData?.name);
+  const temperature = firstRoomData?.sumstate?.value?.split(';')[0];
+  const targetTemp = firstRoomData?.sumstate?.value?.split(';')[1];
 
   const alarmStatus = status?.globals?.alarm?.sumstate?.value;
   const isAlarmActive = alarmStatus === '1' || alarmStatus === '3';
