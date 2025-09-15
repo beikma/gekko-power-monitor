@@ -12,6 +12,8 @@ import SmartHomeDashboard from '@/components/SmartHomeDashboard';
 import { CO2ImpactTracker } from '@/components/CO2ImpactTracker';
 import { PredictiveMaintenanceCard } from '@/components/PredictiveMaintenanceCard';
 import { EnergyPredictionChart } from '@/components/EnergyPredictionChart';
+import { ProphetForecastCard } from '@/components/ProphetForecastCard';
+import { SolarForecastCard } from '@/components/SolarForecastCard';
 import { VoiceToggle } from '@/components/VoiceToggle';
 import { Button } from "@/components/ui/button";
 import { RefreshCw, Zap, Home, Activity, Settings, Grid3X3 } from "lucide-react";
@@ -341,15 +343,21 @@ const Index = () => {
               />
             </div>
             
+            {/* Forecast Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <ProphetForecastCard />
+              <SolarForecastCard />
+            </div>
+
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div>
                 <EnergyInsights />
               </div>
               <div className="space-y-6">
-                <DirectApiImport />
-                <BulkDataImport />
                 <AdvancedMLDashboard />
                 <AdvancedAIDashboard />
+                <DirectApiImport />
+                <BulkDataImport />
               </div>
               <div>
                 <BuildingProfile />
@@ -416,11 +424,30 @@ const Index = () => {
             </div>
 
             {/* AI Energy Insights and Building Profile */}
+            {/* AI ML Functionalities in Classic View */}
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 mb-8">
+              <div>
+                <EnergyPredictionChart data={data} />
+              </div>
+              <div>
+                <PredictiveMaintenanceCard data={data} />
+              </div>
+            </div>
+
+            {/* Forecast Cards */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+              <ProphetForecastCard />
+              <SolarForecastCard />
+            </div>
+
+            {/* AI Energy Insights and Advanced Dashboards */}
             <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
               <div>
                 <EnergyInsights />
               </div>
               <div className="space-y-6">
+                <AdvancedMLDashboard />
+                <AdvancedAIDashboard />
                 <DirectApiImport />
                 <BulkDataImport />
               </div>

@@ -276,12 +276,54 @@ export default function SmartHomeDashboard({
         </TabsContent>
 
         <TabsContent value="analytics" className="mt-6">
-          <div className="text-center py-12">
-            <BarChart3 className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-            <h3 className="text-lg font-semibold mb-2">Advanced Analytics</h3>
-            <p className="text-muted-foreground">
-              Historical data analysis and trends coming soon!
-            </p>
+          <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-6">
+                <div className="p-6 border rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-energy-primary" />
+                    ML Analysis Dashboard
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Advanced machine learning analysis of your energy consumption patterns.
+                  </p>
+                </div>
+                <div className="p-6 border rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-energy-primary" />
+                    AI Energy Insights
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    AI-powered recommendations for energy optimization and cost savings.
+                  </p>
+                </div>
+              </div>
+              <div className="space-y-6">
+                <div className="p-6 border rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-energy-primary" />
+                    Predictive Analytics
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Forecast future energy consumption and predict maintenance needs.
+                  </p>
+                </div>
+                <div className="p-6 border rounded-lg">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <BarChart3 className="h-5 w-5 text-energy-primary" />
+                    Solar & Weather Forecasts
+                  </h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Advanced forecasting for solar generation and weather impact analysis.
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div className="text-center py-4">
+              <p className="text-sm text-muted-foreground">
+                Switch to main dashboard to access full AI/ML functionality panels
+              </p>
+            </div>
           </div>
         </TabsContent>
       </Tabs>
