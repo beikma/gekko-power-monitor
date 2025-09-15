@@ -108,45 +108,25 @@ export function useGarageSocket() {
     });
     
     try {
-      // First get device info to find the correct command index
+      // Use the same successful pattern as lights: var/loads/itemX/scmd/set with value parameter
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
-      const baseParams = new URLSearchParams({
-        username: 'mustermann@my-gekko.com',
-        key: 'HjR9j4BrruA8wZiBeiWXnD',
-        gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
-      });
-
-      // Get device info to find scmd index
-      console.log(`🔍 Getting device info for ${socket.id}...`);
-      const infoResponse = await fetch(`${proxyUrl}?endpoint=var&${baseParams}`);
-      const infoData = await infoResponse.json();
       
-      const deviceInfo = infoData.loads?.[socket.id];
-      const deviceIndex = deviceInfo?.scmd?.index;
-      
-      console.log(`📊 Device info for ${socket.id}:`, deviceInfo);
-      console.log(`🔢 Command index: ${deviceIndex}`);
-      
-      if (!deviceIndex) {
-        throw new Error(`Could not find command index for ${socket.id}`);
-      }
-
       // For garage socket: 0=off, 1=onImpulse, 2=onPermanent, T=toggle
-      // Use "2" for permanent ON, "0" for OFF
+      // Use "2" for permanent ON, "0" for OFF (same as lights working implementation)
       const value = newState ? '2' : '0';
       
-      // Use var/scmd endpoint with device index
-      const cmdParams = new URLSearchParams({
-        endpoint: 'var/scmd',
+      // Use the same successful endpoint format as lights
+      const endpoint = `var/loads/${socket.id}/scmd/set`;
+      const params = new URLSearchParams({
+        endpoint,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
-        index: deviceIndex.toString(),
         value: value
       });
 
-      console.log(`🚀 Command API call: var/scmd with index=${deviceIndex}, value=${value} (${newState ? 'ON_PERMANENT' : 'OFF'})`);
-      const response = await fetch(`${proxyUrl}?${cmdParams}`);
+      console.log(`🚀 Command API call: ${endpoint} with value=${value} (${newState ? 'ON_PERMANENT' : 'OFF'})`);
+      const response = await fetch(`${proxyUrl}?${params}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
       
@@ -156,13 +136,13 @@ export function useGarageSocket() {
       apiLogger?.addLog({
         type: response.ok ? 'response' : 'error',
         method: 'POST',
-        url: `MyGekko API - var/scmd (index=${deviceIndex})`,
+        url: `MyGekko API - ${endpoint}`,
         status: response.status,
         data: responseText,
         duration
       });
       
-      // Check if command was successful
+      // Check if command was successful (same as lights implementation)
       if (response.ok && responseText !== '{"error":"API Error: 400"}') {
         setSocket(prev => prev ? { ...prev, isOn: newState } : null);
         console.log(`✅ Socket toggle successful - ${newState ? 'ON PERMANENT' : 'OFF'}`);
