@@ -50,3 +50,6 @@ verify_jwt = false
 
 [functions.open-meteo-weather]
 verify_jwt = false
+
+[functions.openems-bridge]
+verify_jwt = false

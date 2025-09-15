@@ -8,6 +8,7 @@ import { OpenMeteoTestCard } from '@/components/OpenMeteoTestCard';
 import { OpenMeteoDirectTest } from '@/components/OpenMeteoDirectTest';
 import { ProphetForecastCard } from '@/components/ProphetForecastCard';
 import { VoiceAssistant } from '@/components/VoiceAssistant';
+import { OpenEMSIntegration } from '@/components/OpenEMSIntegration';
 
 export default function Admin() {
   return (
@@ -21,6 +22,8 @@ export default function Admin() {
       
       <div className="grid gap-6">
         <DirectLightControl />
+        
+        <OpenEMSIntegration />
         
         <div className="grid lg:grid-cols-2 gap-6">
           <MCPTestPanel />
