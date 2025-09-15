@@ -117,16 +117,16 @@ export function useGarageSocket() {
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
       });
 
-      // Use correct myGEKKO API format: /var/lights/itemX/scmd/set
+      // Use correct myGEKKO API format: /var/loads/itemX/scmd/set (sockets are in loads section)
       const cmdParams = new URLSearchParams({
-        endpoint: `var/lights/${socket.id}/scmd/set`,
+        endpoint: `var/loads/${socket.id}/scmd/set`,
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
         value: value
       });
 
-      console.log(`🚀 Command API call: var/lights/${socket.id}/scmd/set with value=${value}`);
+      console.log(`🚀 Command API call: var/loads/${socket.id}/scmd/set with value=${value}`);
       const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
@@ -137,7 +137,7 @@ export function useGarageSocket() {
       apiLogger?.addLog({
         type: response.ok ? 'response' : 'error',
         method: 'POST',
-        url: `MyGekko API - var/lights/${socket.id}/scmd/set`,
+        url: `MyGekko API - var/loads/${socket.id}/scmd/set`,
         status: response.status,
         data: responseText,
         duration
@@ -213,9 +213,9 @@ function findGarageSocket(gekkoData: any): { id: string; name: string; location:
   console.log('🔍 Searching for controllable garage socket in myGEKKO data:', gekkoData);
   
   // Log all available devices for debugging
-  if (gekkoData.lights) {
-    console.log('🔍 Available lights devices:');
-    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
+  if (gekkoData.loads) {
+    console.log('🔍 Available loads (sockets/power outlets):');
+    for (const [itemKey, itemData] of Object.entries(gekkoData.loads)) {
       const item = itemData as any;
       if (item.name) {
         console.log(`  - ${itemKey}: "${item.name}" (page: ${item.page || 'none'})`);
@@ -223,12 +223,11 @@ function findGarageSocket(gekkoData: any): { id: string; name: string; location:
     }
   }
   
-  // Based on user feedback, look for specific device patterns
-  // Check lights section first since garage socket might be listed there
-  if (gekkoData.lights && typeof gekkoData.lights === 'object') {
-    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
+  // Search in loads section - this is where sockets/power outlets are located
+  if (gekkoData.loads && typeof gekkoData.loads === 'object') {
+    for (const [itemKey, itemData] of Object.entries(gekkoData.loads)) {
       const item = itemData as any;
-      console.log(`🔍 Checking lights/${itemKey}:`, item);
+      console.log(`🔍 Checking loads/${itemKey}:`, item);
       
       if (item.name && item.scmd?.index) {
         const name = item.name.toLowerCase();
@@ -242,7 +241,7 @@ function findGarageSocket(gekkoData: any): { id: string; name: string; location:
           return {
             id: itemKey,
             name: item.name,
-            location: item.page || 'lights'
+            location: item.page || 'loads'
           };
         }
       }
