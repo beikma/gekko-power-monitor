@@ -7,6 +7,8 @@ import { useToast } from '@/hooks/use-toast';
 
 interface SocketData {
   id: string;
+  name: string;
+  page: string;
   state: string;
   status: 'OFF' | 'ON' | 'FORCED_ON';
   rawValue: string;
@@ -27,14 +29,21 @@ export function SocketAnalyzer() {
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3'
       });
       
-      const response = await fetch(`${proxyUrl}?endpoint=var/status&${params}`);
-      const data = await response.json();
+      // First fetch device names from var endpoint
+      console.log('🔍 Fetching device information...');
+      const varResponse = await fetch(`${proxyUrl}?endpoint=var&${params}`);
+      const varData = await varResponse.json();
       
-      if (data.loads) {
+      // Then fetch status data
+      console.log('🔍 Fetching status information...');
+      const statusResponse = await fetch(`${proxyUrl}?endpoint=var/status&${params}`);
+      const statusData = await statusResponse.json();
+      
+      if (statusData.loads) {
         const socketList: SocketData[] = [];
         
         // Parse all load items (sockets)
-        Object.entries(data.loads).forEach(([key, value]: [string, any]) => {
+        Object.entries(statusData.loads).forEach(([key, value]: [string, any]) => {
           if (key.startsWith('item') && value.sumstate?.value) {
             const rawValue = value.sumstate.value;
             const [stateCode] = rawValue.split(';');
@@ -43,8 +52,17 @@ export function SocketAnalyzer() {
             if (stateCode === '1') status = 'ON';
             else if (stateCode === '2') status = 'FORCED_ON';
             
+            // Get device name from var data
+            const deviceInfo = varData.lights?.[key];
+            const name = deviceInfo?.name || `Unknown ${key}`;
+            const page = deviceInfo?.page || 'Unknown';
+            
+            console.log(`📊 Socket ${key}: ${name} (${page}) - Status: ${status}`);
+            
             socketList.push({
               id: key,
+              name,
+              page,
               state: stateCode,
               status,
               rawValue
@@ -67,7 +85,7 @@ export function SocketAnalyzer() {
         
         toast({
           title: "Socket Analysis Complete",
-          description: `Found ${socketList.length} sockets: ${normallyOn} ON, ${forcedOn} FORCED ON${socketList.filter(s => s.status === 'ON').length === 1 ? ` - ${socketList.find(s => s.status === 'ON')?.id.toUpperCase()} appears to be your garage!` : ''}`,
+          description: `Found ${socketList.length} sockets: ${normallyOn} ON, ${forcedOn} FORCED ON${socketList.filter(s => s.status === 'ON').length === 1 ? ` - ${socketList.find(s => s.status === 'ON')?.name} (${socketList.find(s => s.status === 'ON')?.id.toUpperCase()}) appears to be your garage!` : ''}`,
         });
       }
       
@@ -245,7 +263,11 @@ export function SocketAnalyzer() {
                     ) : (
                       <Zap className="w-4 h-4 text-yellow-500" />
                     )}
-                    <span className="font-medium">{socket.id.toUpperCase()}</span>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{socket.id.toUpperCase()}</span>
+                      <span className="text-sm text-muted-foreground">{socket.name}</span>
+                      <span className="text-xs text-muted-foreground">{socket.page}</span>
+                    </div>
                   </div>
                   
                   <Badge variant={

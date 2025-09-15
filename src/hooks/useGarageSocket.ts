@@ -223,10 +223,12 @@ function findGarageSocket(gekkoData: any): { id: string; name: string; location:
         const name = item.name.toLowerCase();
         const page = item.page.toLowerCase();
         
-        // Look for garage-related items or generic outlets
+        // Look for garage-related items, parking spots (Stellplatz), or generic outlets
         if (page.includes('garage') || name.includes('garage') || 
+            name.includes('stellplatz') || name.includes('parking') ||
             name.includes('steckdose') || name.includes('socket') ||
-            name.includes('outlet') || name.includes('power')) {
+            name.includes('outlet') || name.includes('power') ||
+            itemKey === 'item24') { // Based on user's screenshot showing item24 as garage
           console.log(`✅ Found controllable garage device: ${itemKey} - ${item.name} (index: ${item.scmd.index})`);
           return {
             id: itemKey,
