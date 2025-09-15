@@ -25,11 +25,15 @@ export const useOpenEMS = () => {
   const [edges, setEdges] = useState<OpenEMSEdge[]>([]);
   const [channels, setChannels] = useState<OpenEMSChannelValue[]>([]);
   const [historyData, setHistoryData] = useState<OpenEMSHistoryData[]>([]);
+  const [isSimulation, setIsSimulation] = useState(true); // Default to simulation mode
   const { toast } = useToast();
 
   const callOpenEMS = async (method: string, params: any = {}, endpoint?: string) => {
     try {
       setIsLoading(true);
+      
+      // Update simulation status based on endpoint
+      setIsSimulation(!endpoint);
       
       console.log(`🔌 Calling OpenEMS method: ${method}`, params);
       
@@ -182,6 +186,7 @@ export const useOpenEMS = () => {
     getChannelsValues,
     queryHistoricData,
     setChannelValue,
-    testConnection
+    testConnection,
+    isSimulation
   };
 };

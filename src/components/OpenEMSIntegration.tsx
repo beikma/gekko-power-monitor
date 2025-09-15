@@ -19,7 +19,8 @@ export const OpenEMSIntegration = () => {
     getChannelsValues,
     queryHistoricData,
     setChannelValue,
-    testConnection
+    testConnection,
+    isSimulation
   } = useOpenEMS();
 
   const [customEndpoint, setCustomEndpoint] = useState('');
@@ -107,8 +108,13 @@ export const OpenEMSIntegration = () => {
           {connectionStatus === 'connected' && <Wifi className="h-3 w-3 mr-1" />}
           {connectionStatus === 'failed' && <WifiOff className="h-3 w-3 mr-1" />}
           {connectionStatus === 'unknown' ? 'Testing...' : 
-           connectionStatus === 'connected' ? 'Connected' : 'Disconnected'}
+           connectionStatus === 'connected' ? (isSimulation ? 'Demo Mode' : 'Connected') : 'Disconnected'}
         </Badge>
+        {isSimulation && (
+          <Badge variant="secondary">
+            Simulation Data
+          </Badge>
+        )}
       </div>
 
       <Card>
@@ -118,7 +124,13 @@ export const OpenEMSIntegration = () => {
             Connection Setup
           </CardTitle>
           <CardDescription>
-            Connect to OpenEMS Backend (defaults to Gitpod demo)
+            Connect to OpenEMS Backend or use demo simulation
+            {isSimulation && (
+              <div className="text-sm text-yellow-600 dark:text-yellow-400 mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded-md">
+                ⚡ Currently using simulated OpenEMS data for demonstration. 
+                Enter a real OpenEMS endpoint above to connect to live data.
+              </div>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -132,7 +144,7 @@ export const OpenEMSIntegration = () => {
                 onChange={(e) => setCustomEndpoint(e.target.value)}
               />
               <p className="text-sm text-muted-foreground mt-1">
-                Leave empty to use Gitpod demo instance
+                Leave empty for demo simulation with realistic energy data
               </p>
             </div>
             <div className="flex items-end">
