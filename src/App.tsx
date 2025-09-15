@@ -6,12 +6,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { ToastProvider as MyToastProvider } from "@/components/ui/toast-provider";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { DashboardLayout } from "./components/layout/DashboardLayout";
-import Dashboard from "./pages/Dashboard";
+import { DashboardOverview } from "./components/overview/DashboardOverview";
 import EnergyDetailsDashboard from "./components/EnergyDetailsDashboard";
-import AI from "./pages/AI";
-import Marketplace from "./pages/Marketplace";
-import Configuration from "./pages/Configuration";
+import LightingControlDashboard from "./components/LightingControlDashboard";
+import ClimateControlDashboard from "./components/ClimateControlDashboard";
+import SecuritySystemDashboard from "./components/SecuritySystemDashboard";
+import TeamsIntegration from "./pages/TeamsIntegration";
 import BuildingProfile from "./components/BuildingProfile";
+import { BulkDataImport } from "./components/BulkDataImport";
+import SmartHomeDashboard from "./components/SmartHomeDashboard";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import GarageSocket from "./pages/GarageSocket";
@@ -30,7 +33,7 @@ const App: React.FC = () => {
           <Routes>
             <Route path="/" element={
               <DashboardLayout>
-                <Dashboard />
+                <DashboardOverview />
               </DashboardLayout>
             } />
             
@@ -40,33 +43,63 @@ const App: React.FC = () => {
               </DashboardLayout>
             } />
             
-            <Route path="/ai" element={
+            <Route path="/lighting" element={
               <DashboardLayout>
-                <AI />
+                <LightingDashboard />
               </DashboardLayout>
             } />
             
-            <Route path="/marketplace" element={
+            <Route path="/climate" element={
               <DashboardLayout>
-                <Marketplace />
+                <ClimateDashboard />
               </DashboardLayout>
             } />
             
-            <Route path="/control" element={
+            <Route path="/security" element={
+              <DashboardLayout>
+                <SecurityDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/garage" element={
               <DashboardLayout>
                 <GarageSocket />
-              </DashboardLayout>
-            } />
-            
-            <Route path="/configuration" element={
-              <DashboardLayout>
-                <Configuration />
               </DashboardLayout>
             } />
             
             <Route path="/building" element={
               <DashboardLayout>
                 <BuildingProfile />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/analytics" element={
+              <DashboardLayout>
+                <AnalyticsDashboard />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/import" element={
+              <DashboardLayout>
+                <BulkDataImport />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/teams" element={
+              <DashboardLayout>
+                <TeamsIntegration />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/status" element={
+              <DashboardLayout title="System Status">
+                <SystemStatusPage />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/settings" element={
+              <DashboardLayout title="Settings">
+                <SettingsPage />
               </DashboardLayout>
             } />
 
@@ -84,10 +117,70 @@ const App: React.FC = () => {
 const EnergyDashboard: React.FC = () => {
   const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
   
+  // Debug logging
+  console.log('EnergyDashboard data:', { data, status, isLoading, error });
+  
   if (isLoading) return <div className="p-6 text-center">Loading energy data...</div>;
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
   return <EnergyDetailsDashboard data={status} />;
+};
+
+const LightingDashboard: React.FC = () => {
+  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  
+  // Debug logging
+  console.log('LightingDashboard data:', { data, status, isLoading, error });
+  
+  if (isLoading) return <div className="p-6 text-center">Loading lighting data...</div>;
+  if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
+  
+  return <LightingControlDashboard data={data} status={status} />;
+};
+
+const ClimateDashboard: React.FC = () => {
+  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  
+  // Debug logging
+  console.log('ClimateDashboard data:', { data, status, isLoading, error });
+  
+  if (isLoading) return <div className="p-6 text-center">Loading climate data...</div>;
+  if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
+  
+  return <ClimateControlDashboard data={status} />;
+};
+
+const SecurityDashboard: React.FC = () => {
+  const { data, status } = useGekkoApi({ refreshInterval: 30000 });
+  return <SecuritySystemDashboard data={data} />;
+};
+
+const AnalyticsDashboard: React.FC = () => {
+  const { data, status, isLoading, connectionStatus } = useGekkoApi({ refreshInterval: 30000 });
+  return <SmartHomeDashboard data={data} status={status} isLoading={isLoading} connectionStatus={connectionStatus} />;
+};
+
+// Placeholder components for missing pages - defined as proper React components
+const SystemStatusPage: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-semibold mb-4">System Status</h2>
+        <p className="text-muted-foreground">System monitoring dashboard coming soon.</p>
+      </div>
+    </div>
+  );
+};
+
+const SettingsPage: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      <div className="text-center py-12">
+        <h2 className="text-2xl font-semibold mb-4">Settings</h2>
+        <p className="text-muted-foreground">System configuration options coming soon.</p>
+      </div>
+    </div>
+  );
 };
 
 export default App;

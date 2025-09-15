@@ -11,9 +11,7 @@ import {
   Activity,
   MessageSquare,
   Upload,
-  Wrench,
-  Brain,
-  Store
+  Wrench
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -31,16 +29,25 @@ import {
 } from "@/components/ui/sidebar";
 
 const mainItems = [
-  { title: "Dashboard", url: "/", icon: Home },
+  { title: "Overview", url: "/", icon: Home },
   { title: "Energy", url: "/energy", icon: Zap },
-  { title: "AI & ML", url: "/ai", icon: Brain },
-  { title: "Marketplace", url: "/marketplace", icon: Store },
-  { title: "Control", url: "/control", icon: Settings },
+  { title: "Lighting", url: "/lighting", icon: Lightbulb },
+  { title: "Climate", url: "/climate", icon: Thermometer },
+  { title: "Security", url: "/security", icon: Shield },
+  { title: "Garage Socket", url: "/garage", icon: Home },
 ];
 
-const setupItems = [
-  { title: "Configuration", url: "/configuration", icon: Wrench },
+const managementItems = [
   { title: "Building Profile", url: "/building", icon: Building },
+  { title: "Analytics", url: "/analytics", icon: BarChart3 },
+  { title: "Data Import", url: "/import", icon: Upload },
+  { title: "Teams Integration", url: "/teams", icon: MessageSquare },
+];
+
+const systemItems = [
+  { title: "System Status", url: "/status", icon: Activity },
+  { title: "Settings", url: "/settings", icon: Settings },
+  { title: "Admin", url: "/admin", icon: Wrench },
 ];
 
 export function AppSidebar() {
@@ -77,7 +84,7 @@ export function AppSidebar() {
 
         {/* Main Navigation */}
         <SidebarGroup>
-          {!isCollapsed && <SidebarGroupLabel>Smart Home</SidebarGroupLabel>}
+          {!isCollapsed && <SidebarGroupLabel>Main</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
               {mainItems.map((item) => (
@@ -94,12 +101,31 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Setup & Configuration */}
-        <SidebarGroup className="mt-8">
-          {!isCollapsed && <SidebarGroupLabel>Setup</SidebarGroupLabel>}
+        {/* Management */}
+        <SidebarGroup className="mt-6">
+          {!isCollapsed && <SidebarGroupLabel>Management</SidebarGroupLabel>}
           <SidebarGroupContent>
             <SidebarMenu>
-              {setupItems.map((item) => (
+              {managementItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild className="h-12">
+                    <NavLink to={item.url} className={getNavCls}>
+                      <item.icon className={`h-5 w-5 ${isCollapsed ? 'mx-auto' : 'mr-3'}`} />
+                      {!isCollapsed && <span className="font-medium">{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* System */}
+        <SidebarGroup className="mt-6">
+          {!isCollapsed && <SidebarGroupLabel>System</SidebarGroupLabel>}
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {systemItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild className="h-12">
                     <NavLink to={item.url} className={getNavCls}>
