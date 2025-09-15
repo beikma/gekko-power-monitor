@@ -212,50 +212,61 @@ export function useGarageSocket() {
 function findGarageSocket(gekkoData: any): { id: string; name: string; location: string } | null {
   console.log('🔍 Searching for controllable garage socket in myGEKKO data:', gekkoData);
   
-  // First priority: Look in lights section for controllable items
-  if (gekkoData.lights && typeof gekkoData.lights === 'object') {
-    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
-      const item = itemData as any;
-      console.log(`🔍 Checking lights/${itemKey}:`, item);
+  // Search in all possible sections for garage socket
+  const sectionsToSearch = ['loads', 'lights', 'outlets', 'sockets'];
+  
+  for (const section of sectionsToSearch) {
+    if (gekkoData[section] && typeof gekkoData[section] === 'object') {
+      console.log(`🔍 Searching in ${section} section...`);
       
-      // Look for items that could be sockets/outlets
-      if (item.name && item.page && item.scmd?.index) {
-        const name = item.name.toLowerCase();
-        const page = item.page.toLowerCase();
+      for (const [itemKey, itemData] of Object.entries(gekkoData[section])) {
+        const item = itemData as any;
+        console.log(`🔍 Checking ${section}/${itemKey}:`, item);
         
-        // Look for garage-related items, parking spots (Stellplatz), or generic outlets
-        if (page.includes('garage') || name.includes('garage') || 
-            name.includes('stellplatz') || name.includes('parking') ||
-            name.includes('steckdose') || name.includes('socket') ||
+        // Look for items that could be garage sockets
+        if (item.name && item.scmd?.index) {
+          const name = item.name.toLowerCase();
+          const page = (item.page || '').toLowerCase();
+          
+          // Specifically look for garage-related terms
+          if (name.includes('garage') || page.includes('garage') || 
+              name.includes('stellplatz') || name.includes('parking')) {
+            console.log(`✅ Found garage device: ${itemKey} - ${item.name} in ${section} (index: ${item.scmd.index})`);
+            return {
+              id: itemKey,
+              name: item.name,
+              location: item.page || section
+            };
+          }
+        }
+      }
+    }
+  }
+  
+  // If no garage-specific device found, look for any socket/outlet that's not a light
+  console.log('🔍 No garage-specific device found, looking for non-light controllable devices...');
+  
+  if (gekkoData.loads && typeof gekkoData.loads === 'object') {
+    for (const [itemKey, itemData] of Object.entries(gekkoData.loads)) {
+      const item = itemData as any;
+      if (item.name && item.scmd?.index) {
+        const name = item.name.toLowerCase();
+        // Avoid lights, prefer actual sockets/outlets
+        if (name.includes('steckdose') || name.includes('socket') || 
             name.includes('outlet') || name.includes('power') ||
-            itemKey === 'item24') { // Based on user's screenshot showing item24 as garage
-          console.log(`✅ Found controllable garage device: ${itemKey} - ${item.name} (index: ${item.scmd.index})`);
+            (!name.includes('licht') && !name.includes('light') && !name.includes('beleuchtung'))) {
+          console.log(`✅ Found potential socket device: ${itemKey} - ${item.name} (index: ${item.scmd.index})`);
           return {
             id: itemKey,
             name: item.name,
-            location: item.page
+            location: item.page || 'Unknown'
           };
         }
       }
     }
   }
   
-  // Fallback: Look for any controllable light item (some might actually be sockets)
-  if (gekkoData.lights && typeof gekkoData.lights === 'object') {
-    for (const [itemKey, itemData] of Object.entries(gekkoData.lights)) {
-      const item = itemData as any;
-      if (item.scmd?.index) {
-        console.log(`✅ Found controllable item as fallback: ${itemKey} - ${item.name || 'Unknown'} (index: ${item.scmd.index})`);
-        return {
-          id: itemKey,
-          name: item.name || `Controllable Device ${itemKey.replace('item', '')}`,
-          location: item.page || 'Unknown'
-        };
-      }
-    }
-  }
-  
-  console.log('❌ No controllable garage socket found');
+  console.log('❌ No suitable garage socket found');
   return null;
 }
 
