@@ -43,36 +43,40 @@ export function useGarageSocket() {
 
       const gekkoData = await gekkoResponse.json();
 
-      // Look for power sockets/devices in garage
-      const garageSocket = findGarageSocket(gekkoData);
+      // From logs, we know garage is item15 in loads section
+      const garageItem = gekkoData.loads?.item15;
       
-      if (garageSocket) {
+      if (garageItem && garageItem.scmd?.index) {
         // Get current status
         const statusResponse = await fetch(`${proxyUrl}?endpoint=var/status&${baseParams}`);
         
         if (statusResponse.ok) {
           const statusData = await statusResponse.json();
-          const socketStatus = getSocketStatus(statusData, garageSocket.id);
+          const socketStatus = getSocketStatus(statusData, 'item15');
           
           setSocket({
-            ...garageSocket,
+            id: 'item15',
+            name: garageItem.name || 'Garage',
+            location: garageItem.page || 'EG',
             isOn: socketStatus,
-            schedule: [] // TODO: Load from local storage or database
+            schedule: []
           });
         } else {
           setSocket({
-            ...garageSocket,
+            id: 'item15',
+            name: garageItem.name || 'Garage',
+            location: garageItem.page || 'EG',
             isOn: false,
             schedule: []
           });
         }
       } else {
-        // Create mock garage socket for development
+        // Fallback to known garage device from logs
         setSocket({
-          id: 'garage_socket_1',
-          name: 'Garage Steckdose',
+          id: 'item15',
+          name: 'Garage',
           isOn: false,
-          location: 'Garage',
+          location: 'EG',
           schedule: []
         });
       }
@@ -108,24 +112,25 @@ export function useGarageSocket() {
     });
     
     try {
-      // Use the correct myGEKKO API format for loads as per wiki documentation:
-      // var/loads/{itemId}/scmd/set with value parameter
+      // Use the working format from socket analyzer: var/scmd with index parameter
+      // From logs: garage is item15 with scmd.index: 251570
       const proxyUrl = 'https://kayttwmmdcubfjqrpztw.supabase.co/functions/v1/gekko-proxy';
       
-      // For garage socket: 0=off, 1=onImpulse, 2=onPermanent, T=toggle
-      // Use "2" for permanent ON, "0" for OFF
+      // For loads: 0=off, 1=onImpulse, 2=onPermanent, T=toggle
+      // Use "2" for permanent ON, "0" for OFF (matching socket analyzer logic)
       const value = newState ? '2' : '0';
       
-      // Use the exact format from wiki: var/loads/{itemId}/scmd/set with value parameter
+      // Use the same format as working socket analyzer: var/scmd with index=251570
       const cmdParams = new URLSearchParams({
-        endpoint: `var/loads/${socket.id}/scmd/set`,
+        endpoint: 'var/scmd',
         username: 'mustermann@my-gekko.com',
         key: 'HjR9j4BrruA8wZiBeiWXnD',
         gekkoid: 'K999-7UOZ-8ZYZ-6TH3',
+        index: '251570', // Garage scmd index from logs
         value: value
       });
 
-      console.log(`🚀 Command API call: var/loads/${socket.id}/scmd/set with value=${value} (${newState ? 'ON_PERMANENT' : 'OFF'})`);
+      console.log(`🚀 Command API call: var/scmd with index=251570, value=${value} (${newState ? 'ON_PERMANENT' : 'OFF'})`);
       const response = await fetch(`${proxyUrl}?${cmdParams}`);
       const responseText = await response.text();
       const duration = Date.now() - startTime;
@@ -136,7 +141,7 @@ export function useGarageSocket() {
       apiLogger?.addLog({
         type: response.ok ? 'response' : 'error',
         method: 'POST',
-        url: `MyGekko API - var/loads/${socket.id}/scmd/set`,
+        url: `MyGekko API - var/scmd (index=251570)`,
         status: response.status,
         data: responseText,
         duration
