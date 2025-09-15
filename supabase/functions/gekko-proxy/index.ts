@@ -51,6 +51,14 @@ serve(async (req) => {
       requestOptions.method = 'GET';
       
       console.log(`🔧 Control command: ${endpoint}, value=${value}`);
+    } else if (endpoint === 'var/scmd' && index && value !== null) {
+      // Handle direct scmd commands with index
+      gekkoParams.append('index', index);
+      gekkoParams.append('value', value);
+      gekkoUrl = `https://live.my-gekko.com/api/v1/${endpoint}?${gekkoParams}`;
+      requestOptions.method = 'GET';
+      
+      console.log(`🔧 Direct scmd command: index=${index}, value=${value}`);
     } else if (endpoint.startsWith('list/')) {
       // Handle alarm list endpoints - these use a different API structure
       const startrow = url.searchParams.get('startrow') || '0';
