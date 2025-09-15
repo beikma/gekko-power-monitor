@@ -11,9 +11,10 @@ import { useState } from "react";
 interface LightingControlDashboardProps {
   data: any;  // Schema data with names
   status: any;  // Status data with current values
+  refetch?: () => void;  // Function to refresh data
 }
 
-export default function LightingControlDashboard({ data, status }: LightingControlDashboardProps) {
+export default function LightingControlDashboard({ data, status, refetch }: LightingControlDashboardProps) {
   const { toast } = useToast();
   const [isToggling, setIsToggling] = useState(false);
   
@@ -102,6 +103,13 @@ export default function LightingControlDashboard({ data, status }: LightingContr
 
       console.log('Light control result:', result);
       
+      // Refresh data after successful command with a small delay
+      if (refetch) {
+        setTimeout(() => {
+          refetch();
+        }, 1500); // Wait 1.5 seconds for myGEKKO to process the command
+      }
+      
     } catch (error) {
       console.error('Error controlling lights:', error);
       toast({
@@ -142,6 +150,13 @@ export default function LightingControlDashboard({ data, status }: LightingContr
       });
 
       console.log('Single light control result:', result);
+      
+      // Refresh data after successful command with a small delay
+      if (refetch) {
+        setTimeout(() => {
+          refetch();
+        }, 1500); // Wait 1.5 seconds for myGEKKO to process the command
+      }
       
     } catch (error) {
       console.error('Error controlling light:', error);

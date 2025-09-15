@@ -20,14 +20,16 @@ interface SmartHomeDashboardProps {
   data: any;
   status: any;
   isLoading: boolean;
-  connectionStatus: 'connected' | 'disconnected' | 'loading';
+  error: string | null;
+  refetch?: () => void;
 }
 
 export default function SmartHomeDashboard({ 
   data, 
   status, 
   isLoading, 
-  connectionStatus 
+  error,
+  refetch
 }: SmartHomeDashboardProps) {
   const [activeTab, setActiveTab] = useState("overview");
 
@@ -262,7 +264,7 @@ export default function SmartHomeDashboard({
         </TabsContent>
 
         <TabsContent value="lighting" className="mt-6">
-          <LightingControlDashboard data={data} status={status} />
+          <LightingControlDashboard data={data} status={status} refetch={refetch} />
         </TabsContent>
 
         <TabsContent value="energy" className="mt-6">

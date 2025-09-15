@@ -127,7 +127,7 @@ const EnergyDashboard: React.FC = () => {
 };
 
 const LightingDashboard: React.FC = () => {
-  const { data, status, isLoading, error } = useGekkoApi({ refreshInterval: 30000 });
+  const { data, status, isLoading, error, refetch } = useGekkoApi({ refreshInterval: 30000 });
   
   // Debug logging
   console.log('LightingDashboard data:', { data, status, isLoading, error });
@@ -135,7 +135,7 @@ const LightingDashboard: React.FC = () => {
   if (isLoading) return <div className="p-6 text-center">Loading lighting data...</div>;
   if (error) return <div className="p-6 text-center text-destructive">Error: {error}</div>;
   
-  return <LightingControlDashboard data={data} status={status} />;
+  return <LightingControlDashboard data={data} status={status} refetch={refetch} />;
 };
 
 const ClimateDashboard: React.FC = () => {
@@ -156,8 +156,8 @@ const SecurityDashboard: React.FC = () => {
 };
 
 const AnalyticsDashboard: React.FC = () => {
-  const { data, status, isLoading, connectionStatus } = useGekkoApi({ refreshInterval: 30000 });
-  return <SmartHomeDashboard data={data} status={status} isLoading={isLoading} connectionStatus={connectionStatus} />;
+  const { data, status, isLoading, error, refetch } = useGekkoApi({ refreshInterval: 30000 });
+  return <SmartHomeDashboard data={data} status={status} isLoading={isLoading} error={error} refetch={refetch} />;
 };
 
 // Placeholder components for missing pages - defined as proper React components

@@ -336,7 +336,8 @@ const Index = () => {
                 data={data} 
                 status={status} 
                 isLoading={isLoading} 
-                connectionStatus={connectionStatus} 
+                error={error}
+                refetch={refetch}
               />
             </div>
             
