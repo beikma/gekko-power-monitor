@@ -18,6 +18,7 @@ import SmartHomeDashboard from "./components/SmartHomeDashboard";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 import GarageSocket from "./pages/GarageSocket";
+import LOYTECDashboard from "./pages/LOYTECDashboard";
 import { useGekkoApi } from "./hooks/useGekkoApi";
 
 const queryClient = new QueryClient();
@@ -88,6 +89,12 @@ const App: React.FC = () => {
             <Route path="/teams" element={
               <DashboardLayout>
                 <TeamsIntegration />
+              </DashboardLayout>
+            } />
+            
+            <Route path="/loytec" element={
+              <DashboardLayout>
+                <LOYTECDashboard />
               </DashboardLayout>
             } />
             

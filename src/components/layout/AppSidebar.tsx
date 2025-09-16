@@ -11,7 +11,8 @@ import {
   Activity,
   MessageSquare,
   Upload,
-  Wrench
+  Wrench,
+  Layers
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -39,6 +40,7 @@ const mainItems = [
 
 const managementItems = [
   { title: "Building Profile", url: "/building", icon: Building },
+  { title: "LOYTEC Dashboard", url: "/loytec", icon: Layers },
   { title: "Analytics", url: "/analytics", icon: BarChart3 },
   { title: "Data Import", url: "/import", icon: Upload },
   { title: "Teams Integration", url: "/teams", icon: MessageSquare },
