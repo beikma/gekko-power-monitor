@@ -14,6 +14,87 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_services: {
+        Row: {
+          api_endpoints: Json | null
+          category: string
+          compatibility: Json | null
+          config_schema: Json | null
+          created_at: string
+          description: string
+          icon_url: string | null
+          id: string
+          installation_type: string
+          is_active: boolean
+          is_featured: boolean
+          name: string
+          price_per_month: number | null
+          price_per_usage: number | null
+          pricing_model: string
+          provider: string
+          requirements: Json | null
+          screenshot_urls: string[] | null
+          service_id: string
+          short_description: string | null
+          subcategory: string | null
+          tags: string[] | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          api_endpoints?: Json | null
+          category: string
+          compatibility?: Json | null
+          config_schema?: Json | null
+          created_at?: string
+          description: string
+          icon_url?: string | null
+          id?: string
+          installation_type?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name: string
+          price_per_month?: number | null
+          price_per_usage?: number | null
+          pricing_model?: string
+          provider: string
+          requirements?: Json | null
+          screenshot_urls?: string[] | null
+          service_id: string
+          short_description?: string | null
+          subcategory?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          api_endpoints?: Json | null
+          category?: string
+          compatibility?: Json | null
+          config_schema?: Json | null
+          created_at?: string
+          description?: string
+          icon_url?: string | null
+          id?: string
+          installation_type?: string
+          is_active?: boolean
+          is_featured?: boolean
+          name?: string
+          price_per_month?: number | null
+          price_per_usage?: number | null
+          pricing_model?: string
+          provider?: string
+          requirements?: Json | null
+          screenshot_urls?: string[] | null
+          service_id?: string
+          short_description?: string | null
+          subcategory?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
       building_info: {
         Row: {
           address: string | null
@@ -385,6 +466,86 @@ export type Database = {
           webhook_url?: string
         }
         Relationships: []
+      }
+      user_dashboard_layouts: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          layout_name: string
+          updated_at: string
+          user_id: string
+          widgets: Json
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout_name?: string
+          updated_at?: string
+          user_id: string
+          widgets?: Json
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          layout_name?: string
+          updated_at?: string
+          user_id?: string
+          widgets?: Json
+        }
+        Relationships: []
+      }
+      user_service_installations: {
+        Row: {
+          config: Json | null
+          created_at: string
+          id: string
+          installation_date: string
+          installation_id: string
+          installed_sections: string[] | null
+          last_used: string | null
+          service_id: string
+          status: string
+          updated_at: string
+          usage_stats: Json | null
+        }
+        Insert: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          installation_date?: string
+          installation_id: string
+          installed_sections?: string[] | null
+          last_used?: string | null
+          service_id: string
+          status?: string
+          updated_at?: string
+          usage_stats?: Json | null
+        }
+        Update: {
+          config?: Json | null
+          created_at?: string
+          id?: string
+          installation_date?: string
+          installation_id?: string
+          installed_sections?: string[] | null
+          last_used?: string | null
+          service_id?: string
+          status?: string
+          updated_at?: string
+          usage_stats?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_service_installations_service_id_fkey"
+            columns: ["service_id"]
+            isOneToOne: false
+            referencedRelation: "ai_services"
+            referencedColumns: ["service_id"]
+          },
+        ]
       }
       voice_log: {
         Row: {
