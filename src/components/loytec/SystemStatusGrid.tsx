@@ -17,6 +17,8 @@ import {
 
 interface SystemStatusGridProps {
   data: any;
+  status: any;
+  mcpClient: any;
 }
 
 interface SystemStatus {
@@ -34,7 +36,7 @@ interface SystemStatus {
   };
 }
 
-export function SystemStatusGrid({ data }: SystemStatusGridProps) {
+export function SystemStatusGrid({ data, status, mcpClient }: SystemStatusGridProps) {
   // Mock system status data - in real implementation this would come from your building systems
   const systemStatuses: SystemStatus[] = [
     {

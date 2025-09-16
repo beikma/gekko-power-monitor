@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useGekkoApi } from '@/hooks/useGekkoApi';
 import { useMCP } from '@/hooks/useMCP';
 import { useWeatherForecast } from '@/hooks/useWeatherForecast';
+import { useEnergyReadings } from '@/hooks/useEnergyReadings';
+import { useBuildingData } from '@/hooks/useBuildingData';
+import { useCarbonIntensity } from '@/hooks/useCarbonIntensity';
 import { Card } from '@/components/ui/card';
 import { BuildingMap3D } from '@/components/loytec/BuildingMap3D';
 import { AirQualityPanel } from '@/components/loytec/AirQualityPanel';
@@ -11,9 +14,27 @@ import { SystemStatusGrid } from '@/components/loytec/SystemStatusGrid';
 import { LiveDataFeed } from '@/components/loytec/LiveDataFeed';
 
 export default function LOYTECDashboard() {
-  const { data: gekkoData, isLoading: gekkoLoading, error: gekkoError } = useGekkoApi({ refreshInterval: 10000 });
+  const { data: gekkoData, status: gekkoStatus, isLoading: gekkoLoading, error: gekkoError } = useGekkoApi({ refreshInterval: 10000 });
   const mcpClient = useMCP();
-  const { data: weatherData, isLoading: weatherLoading } = useWeatherForecast();
+  const { data: weatherData, isLoading: weatherLoading, fetchWeatherForLocation } = useWeatherForecast();
+  const { readings: energyReadings, latestReading } = useEnergyReadings();
+  const { manualInfo: buildingInfo } = useBuildingData();
+  const carbonIntensity = useCarbonIntensity();
+
+  // Auto-fetch weather data when building location is available
+  useEffect(() => {
+    if (buildingInfo?.latitude && buildingInfo?.longitude) {
+      fetchWeatherForLocation('custom', buildingInfo.latitude, buildingInfo.longitude);
+    } else {
+      // Default to Bruneck if no building location
+      fetchWeatherForLocation('bruneck');
+    }
+  }, [buildingInfo?.latitude, buildingInfo?.longitude, fetchWeatherForLocation]);
+
+  // Fetch carbon intensity data
+  useEffect(() => {
+    carbonIntensity.fetchCarbonIntensity();
+  }, []);
 
   if (gekkoLoading || weatherLoading) {
     return (
@@ -69,7 +90,7 @@ export default function LOYTECDashboard() {
                 Real-time zone monitoring
               </div>
             </div>
-            <BuildingMap3D data={gekkoData} mcpClient={mcpClient} />
+            <BuildingMap3D data={gekkoData} status={gekkoStatus} mcpClient={mcpClient} buildingInfo={buildingInfo} />
           </Card>
 
           {/* System Status Grid */}
@@ -80,7 +101,7 @@ export default function LOYTECDashboard() {
                 HVAC • Lighting • Shading • Security
               </div>
             </div>
-            <SystemStatusGrid data={gekkoData} />
+            <SystemStatusGrid data={gekkoData} status={gekkoStatus} mcpClient={mcpClient} />
           </Card>
         </div>
 
@@ -88,22 +109,34 @@ export default function LOYTECDashboard() {
         <div className="space-y-6">
           {/* Weather Widget */}
           <Card className="p-6 bg-gradient-to-br from-blue-500/10 to-cyan-500/10 border-muted">
-            <WeatherWidget data={weatherData} />
+            <WeatherWidget 
+              data={weatherData} 
+              location={buildingInfo?.city || 'Bruneck'} 
+              carbonIntensity={carbonIntensity} 
+            />
           </Card>
 
           {/* Air Quality Panel */}
           <Card className="p-6 bg-gradient-to-br from-green-500/10 to-emerald-500/10 border-muted">
-            <AirQualityPanel data={gekkoData} />
+            <AirQualityPanel data={gekkoData} status={gekkoStatus} />
           </Card>
 
           {/* Energy KPI Radar */}
           <Card className="p-6 bg-gradient-to-br from-amber-500/10 to-orange-500/10 border-muted">
-            <EnergyKPIRadar data={gekkoData} />
+            <EnergyKPIRadar 
+              gekkoData={gekkoData} 
+              energyReadings={energyReadings} 
+              latestReading={latestReading} 
+            />
           </Card>
 
           {/* Live Data Feed */}
           <Card className="p-6 bg-gradient-to-br from-purple-500/10 to-violet-500/10 border-muted">
-            <LiveDataFeed data={gekkoData} />
+            <LiveDataFeed 
+              gekkoData={gekkoData} 
+              status={gekkoStatus} 
+              latestReading={latestReading} 
+            />
           </Card>
         </div>
       </div>

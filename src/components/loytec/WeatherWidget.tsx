@@ -14,6 +14,8 @@ import {
 
 interface WeatherWidgetProps {
   data: any;
+  location?: string;
+  carbonIntensity?: any;
 }
 
 interface WeatherData {
@@ -39,10 +41,41 @@ interface WeatherData {
   }>;
 }
 
-export function WeatherWidget({ data }: WeatherWidgetProps) {
-  // Mock weather data - in real implementation this would come from Open-Meteo API
-  const weatherData: WeatherData = {
-    location: 'Vienna, Austria',
+export function WeatherWidget({ data, location = 'Building Location', carbonIntensity }: WeatherWidgetProps) {
+  // Use real weather data if available, otherwise fallback to mock data
+  const weatherData: WeatherData = data ? {
+    location: location,
+    current: {
+      temperature: Math.round(data.current?.temperature || 18),
+      feelsLike: Math.round((data.current?.temperature || 18) - 2),
+      condition: getWeatherCondition(data.current?.wind_speed, data.current?.precipitation),
+      icon: 'partly-cloudy',
+      humidity: Math.round(data.current?.humidity || 65),
+      windSpeed: Math.round(data.current?.wind_speed || 12),
+      windDirection: 220,
+      pressure: 1013,
+      visibility: 10,
+      uvIndex: 3
+    },
+    hourly: data.hourly?.slice(0, 6).map((hour: any, index: number) => {
+      const time = new Date(hour.timestamp);
+      return {
+        time: time.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false }),
+        temperature: Math.round(hour.temperature),
+        condition: getWeatherCondition(hour.wind_speed, hour.precipitation),
+        icon: getWeatherIconType(hour.wind_speed, hour.precipitation),
+        precipitation: Math.round(hour.precipitation * 100) // Convert to percentage
+      };
+    }) || [
+      { time: '14:00', temperature: 18, condition: 'Partly Cloudy', icon: 'partly-cloudy', precipitation: 0 },
+      { time: '15:00', temperature: 19, condition: 'Sunny', icon: 'sunny', precipitation: 0 },
+      { time: '16:00', temperature: 20, condition: 'Sunny', icon: 'sunny', precipitation: 0 },
+      { time: '17:00', temperature: 19, condition: 'Cloudy', icon: 'cloudy', precipitation: 10 },
+      { time: '18:00', temperature: 17, condition: 'Light Rain', icon: 'rain', precipitation: 60 },
+      { time: '19:00', temperature: 16, condition: 'Light Rain', icon: 'rain', precipitation: 40 }
+    ]
+  } : {
+    location: location,
     current: {
       temperature: 18,
       feelsLike: 16,
@@ -64,6 +97,20 @@ export function WeatherWidget({ data }: WeatherWidgetProps) {
       { time: '19:00', temperature: 16, condition: 'Light Rain', icon: 'rain', precipitation: 40 }
     ]
   };
+
+  function getWeatherCondition(windSpeed?: number, precipitation?: number): string {
+    if (!windSpeed && !precipitation) return 'Partly Cloudy';
+    if (precipitation && precipitation > 0.5) return 'Light Rain';
+    if (windSpeed && windSpeed > 15) return 'Windy';
+    if (windSpeed && windSpeed < 5) return 'Sunny';
+    return 'Partly Cloudy';
+  }
+
+  function getWeatherIconType(windSpeed?: number, precipitation?: number): string {
+    if (precipitation && precipitation > 0.5) return 'rain';
+    if (windSpeed && windSpeed < 5) return 'sunny';
+    return 'partly-cloudy';
+  }
 
   const getWeatherIcon = (condition: string) => {
     switch (condition.toLowerCase()) {
@@ -197,11 +244,39 @@ export function WeatherWidget({ data }: WeatherWidgetProps) {
         </div>
       </div>
 
+      {/* Carbon Intensity */}
+      {carbonIntensity?.data && (
+        <Card className="p-3 bg-gradient-to-r from-green-500/5 to-blue-500/5">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Leaf className="w-4 h-4 text-green-500" />
+              <span className="text-sm font-medium">Carbon Intensity</span>
+            </div>
+            <div className="text-right">
+              <div className="font-bold text-sm">{carbonIntensity.data.current.intensity} gCO₂/kWh</div>
+              <div className={`text-xs ${carbonIntensity.isGreenTime ? 'text-green-500' : 'text-amber-500'}`}>
+                {carbonIntensity.data.current.index}
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {/* Last Updated */}
       <div className="text-xs text-muted-foreground text-center">
-        Updated: {new Date().toLocaleTimeString()}
+        Updated: {data?.updated_at ? new Date(data.updated_at).toLocaleTimeString() : new Date().toLocaleTimeString()}
       </div>
     </div>
+  );
+}
+
+
+function Leaf({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path d="M12 2C8 2 4.5 4.5 4.5 8s1.5 6 3.5 8 4 3 4 3 2-1 4-3 3.5-4.5 3.5-8S16 2 12 2z"/>
+      <path d="M8 8c0-1.5.5-3 1.5-4S12 2.5 12 2.5"/>
+    </svg>
   );
 }
 

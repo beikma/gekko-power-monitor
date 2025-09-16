@@ -6,6 +6,7 @@ import { Wind, Droplets, Gauge, AlertTriangle } from 'lucide-react';
 
 interface AirQualityPanelProps {
   data: any;
+  status: any;
 }
 
 interface AirQualityMetric {
@@ -19,16 +20,40 @@ interface AirQualityMetric {
   description: string;
 }
 
-export function AirQualityPanel({ data }: AirQualityPanelProps) {
-  // Extract air quality data from gekko data or use mock data
+export function AirQualityPanel({ data, status }: AirQualityPanelProps) {
+  // Extract air quality data from gekko data
+  const extractAirQualityFromGekko = () => {
+    if (!status?.var) return null;
+
+    const meteo = status.var.meteo || {};
+    const roomTemps = status.var.roomtemps || {};
+    
+    // Calculate average temperature from room sensors
+    const roomTempValues = Object.values(roomTemps) as any[];
+    const avgTemp = roomTempValues.length > 0 ? 
+      roomTempValues.reduce((sum: number, temp: any) => {
+        const tempValue = Number(temp?.value) || 20;
+        return sum + tempValue;
+      }, 0) / roomTempValues.length : 22;
+    
+    return {
+      co2: Number(meteo.AirQualityOutdoorCO2Concentration) || 420,
+      temperature: Math.round(avgTemp),
+      humidity: Number(meteo.OutdoorHumidity) || 50
+    };
+  };
+
+  const realData = extractAirQualityFromGekko();
+
+  // Create air quality metrics with real or mock data
   const airQualityMetrics: AirQualityMetric[] = [
     {
       id: 'co2',
       label: 'CO₂',
-      value: 420,
+      value: realData?.co2 || 420,
       unit: 'ppm',
       max: 1000,
-      status: 'good',
+      status: (realData?.co2 || 420) > 800 ? 'poor' : (realData?.co2 || 420) > 600 ? 'moderate' : 'good',
       icon: <Wind className="w-4 h-4" />,
       description: 'Carbon dioxide concentration'
     },
@@ -75,10 +100,10 @@ export function AirQualityPanel({ data }: AirQualityPanelProps) {
     {
       id: 'humidity',
       label: 'Humidity',
-      value: 48,
+      value: Math.round(realData?.humidity || 48),
       unit: '%',
       max: 100,
-      status: 'good',
+      status: Math.abs((realData?.humidity || 48) - 50) > 20 ? 'poor' : Math.abs((realData?.humidity || 48) - 50) > 10 ? 'moderate' : 'good',
       icon: <Droplets className="w-4 h-4" />,
       description: 'Relative humidity'
     }
@@ -183,9 +208,10 @@ export function AirQualityPanel({ data }: AirQualityPanelProps) {
         </Card>
       )}
 
-      {/* Last Updated */}
-      <div className="text-xs text-muted-foreground text-center">
-        Last updated: {new Date().toLocaleTimeString()}
+      {/* Data Source Info */}
+      <div className="text-xs text-muted-foreground text-center space-y-1">
+        <div>Data source: {realData ? 'myGEKKO System' : 'Simulated Data'}</div>
+        <div>Last updated: {new Date().toLocaleTimeString()}</div>
       </div>
     </div>
   );

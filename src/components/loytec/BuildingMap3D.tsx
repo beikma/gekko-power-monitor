@@ -21,10 +21,12 @@ interface Zone {
 
 interface BuildingMap3DProps {
   data: any;
+  status: any;
   mcpClient: any;
+  buildingInfo: any;
 }
 
-export function BuildingMap3D({ data, mcpClient }: BuildingMap3DProps) {
+export function BuildingMap3D({ data, status, mcpClient, buildingInfo }: BuildingMap3DProps) {
   const [selectedFloor, setSelectedFloor] = useState(0);
   const [selectedZone, setSelectedZone] = useState<Zone | null>(null);
   const [viewMode, setViewMode] = useState<'2d' | '3d'>('2d');
